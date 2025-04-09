@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { StyleSheet, TextInput, TouchableOpacity, View, Text } from 'react-native';
+import { StyleSheet, TextInput, TouchableOpacity, View, Text, ActivityIndicator } from 'react-native';
+import { ApiService as API } from '../../services/ApiService';
+
 
 interface JoinGameScreenProps {
     onBackPress: () => void;
@@ -8,13 +10,27 @@ interface JoinGameScreenProps {
 export default function JoinGameScreen({ onBackPress }: JoinGameScreenProps) {
     const [gameId, setGameId] = useState('');
     const [error, setError] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
 
-    const handleJoinGame = () => {
+    const handleJoinGame = async () => {
         if (!gameId) {
             setError('Proszę wprowadzić ID gry.');
-        } else {
+            return;
+        }
+        
+        try {
+            setIsLoading(true);
             setError('');
-            console.log(`Dołączono do gry: ${gameId}`);
+            
+            const response = await API.joinGame(gameId);
+            console.log(`Dołączono do gry: ${gameId}`, response);
+            
+            
+        } catch (error) {
+            console.error('Błąd podczas dołączania do gry:', error);
+            setError('Nie udało się dołączyć do gry. Sprawdź ID gry i spróbuj ponownie.');
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -26,11 +42,24 @@ export default function JoinGameScreen({ onBackPress }: JoinGameScreenProps) {
                 placeholder="ID gry"
                 value={gameId}
                 onChangeText={setGameId}
+                editable={!isLoading}
             />
-            <TouchableOpacity style={styles.button} onPress={handleJoinGame}>
-                <Text style={styles.buttonText}>Dołącz</Text>
+            <TouchableOpacity 
+                style={[styles.button, isLoading && styles.buttonDisabled]} 
+                onPress={handleJoinGame}
+                disabled={isLoading}
+            >
+                {isLoading ? (
+                    <ActivityIndicator size="small" color="white" />
+                ) : (
+                    <Text style={styles.buttonText}>Dołącz</Text>
+                )}
             </TouchableOpacity>
-            <TouchableOpacity style={styles.button} onPress={onBackPress}>
+            <TouchableOpacity 
+                style={styles.button} 
+                onPress={onBackPress}
+                disabled={isLoading}
+            >
                 <Text style={styles.buttonText}>Powrót</Text>
             </TouchableOpacity>
             {error && <Text style={styles.errorText}>{error}</Text>}
@@ -70,6 +99,10 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
     },
+    buttonDisabled: {
+        backgroundColor: '#c77ac7',
+        opacity: 0.7,
+    },
     buttonText: {
         fontWeight: 'bold',
         fontSize: 16,
@@ -78,5 +111,6 @@ const styles = StyleSheet.create({
     errorText: {
         color: 'darkred',
         marginTop: 10,
+        textAlign: 'center',
     },
 });

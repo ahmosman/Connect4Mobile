@@ -8,6 +8,7 @@ import MainMenuScreen from './components/screens/MainMenuScreen';
 import WaitingScreen from './components/screens/WaitingScreen';
 import JoinGameScreen from './components/screens/JoinGameScreen';
 import ManualScreen from './components/screens/ManualScreen';
+import { ApiService as API } from './services/ApiService';
 
 // Zapobiegaj automatycznemu ukryciu ekranu ładowania
 SplashScreen.preventAutoHideAsync();
@@ -16,6 +17,7 @@ export default function HomeScreen() {
   const [currentScreen, setCurrentScreen] = useState<'main' | 'waiting' | 'join' | 'manual'>('main');
   const [gameId, setGameId] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   // Załadowanie czcionki Rajdhani z Google Fonts
   const [fontsLoaded, fontError] = useFonts({
@@ -33,11 +35,23 @@ export default function HomeScreen() {
     return null;
   }
 
-  const handleNewGame = () => {
-    const randomGameId = 'GAME' + Math.floor(Math.random() * 10000);
-    setGameId(randomGameId);
-    console.log('Nowa gra:', randomGameId);
-    setCurrentScreen('waiting');
+  const handleNewGame = async () => {
+    try {
+      setIsLoading(true);
+      setErrorMessage('');
+
+      const response = await API.startNewGame();
+
+      setGameId(response.unique_game_id);
+      console.log('Nowa gra utworzona:', response.unique_game_id);
+
+      setCurrentScreen('waiting');
+    } catch (error) {
+      console.error('Błąd podczas tworzenia gry:', error);
+      setErrorMessage('Nie udało się utworzyć gry. Spróbuj ponownie.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleJoinGame = () => {
@@ -46,25 +60,31 @@ export default function HomeScreen() {
 
   const handleBackToMenu = () => {
     setCurrentScreen('main');
+    setErrorMessage('');
   };
 
   return (
-    <ThemedView style={styles.main}>
+    <ThemedView style={styles.main} onLayout={onLayoutRootView}>
       {currentScreen === 'main' && (
         <MainMenuScreen
           onNewGamePress={handleNewGame}
-          onJoinGamePress={() => setCurrentScreen('join')}
+          onJoinGamePress={handleJoinGame}
           onManualPress={() => setCurrentScreen('manual')}
+          isLoading={isLoading}
         />
       )}
       {currentScreen === 'waiting' && (
-        <WaitingScreen gameId={gameId} onBackPress={() => setCurrentScreen('main')} />
+        <WaitingScreen gameId={gameId} onBackPress={handleBackToMenu} />
       )}
       {currentScreen === 'join' && (
-        <JoinGameScreen onBackPress={() => setCurrentScreen('main')} />
+        <JoinGameScreen onBackPress={handleBackToMenu} />
       )}
       {currentScreen === 'manual' && (
-        <ManualScreen onBackPress={() => setCurrentScreen('main')} />
+        <ManualScreen onBackPress={handleBackToMenu} />
+      )}
+
+      {errorMessage && (
+        <ThemedText style={styles.errorMessage}>{errorMessage}</ThemedText>
       )}
     </ThemedView>
   );
@@ -81,8 +101,11 @@ const styles = StyleSheet.create({
   errorMessage: {
     position: 'absolute',
     color: 'darkred',
-    width: 150,
+    width: 200,
     textAlign: 'center',
     bottom: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+    padding: 5,
+    borderRadius: 5,
   },
 });

@@ -1,30 +1,53 @@
 import React from 'react';
-import { StyleSheet, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, TouchableOpacity, View, ActivityIndicator } from 'react-native';
 import { ThemedText } from '@/components/ThemedText';
 
 interface MainMenuScreenProps {
   onNewGamePress: () => void;
   onJoinGamePress: () => void;
   onManualPress: () => void;
+  isLoading?: boolean;
 }
 
 export default function MainMenuScreen({
   onNewGamePress,
   onJoinGamePress,
   onManualPress,
+  isLoading = false,
 }: MainMenuScreenProps) {
   const buttons = [
-    { label: 'Nowa gra', onPress: onNewGamePress },
-    { label: 'Dołącz do gry', onPress: onJoinGamePress },
-    { label: 'O grze', onPress: onManualPress },
+    { 
+      label: isLoading && isLoading ? 'Tworzenie...' : 'Nowa gra', 
+      onPress: onNewGamePress,
+      disabled: isLoading
+    },
+    { 
+      label: 'Dołącz do gry', 
+      onPress: onJoinGamePress,
+      disabled: isLoading
+    },
+    { 
+      label: 'O grze', 
+      onPress: onManualPress,
+      disabled: isLoading
+    },
   ];
 
   return (
     <View style={styles.mainSection}>
       <ThemedText style={styles.heading}>Connect4</ThemedText>
       {buttons.map((button, index) => (
-        <TouchableOpacity key={index} style={styles.btnMain} onPress={button.onPress}>
-          <ThemedText style={styles.buttonText}>{button.label}</ThemedText>
+        <TouchableOpacity 
+          key={index} 
+          style={[styles.btnMain, button.disabled && styles.btnDisabled]} 
+          onPress={button.onPress}
+          disabled={button.disabled}
+        >
+          {isLoading && index === 0 ? (
+            <ActivityIndicator size="small" color="white" />
+          ) : (
+            <ThemedText style={styles.buttonText}>{button.label}</ThemedText>
+          )}
         </TouchableOpacity>
       ))}
     </View>
@@ -54,6 +77,10 @@ const styles = StyleSheet.create({
     width: 130,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  btnDisabled: {
+    backgroundColor: '#c77ac7',
+    opacity: 0.7,
   },
   buttonText: {
     fontFamily: 'Rajdhani_500Medium',
