@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { StyleSheet, TextInput, TouchableOpacity, View, Text, ActivityIndicator } from 'react-native';
-import { ApiService as API } from '../../services/ApiService';
-
+import ApiService from '../../services/ApiService';
 
 interface JoinGameScreenProps {
     onBackPress: () => void;
+    onGameJoined: (gameId: string) => void;
 }
 
-export default function JoinGameScreen({ onBackPress }: JoinGameScreenProps) {
+export default function JoinGameScreen({ onBackPress, onGameJoined }: JoinGameScreenProps) {
     const [gameId, setGameId] = useState('');
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -17,18 +17,23 @@ export default function JoinGameScreen({ onBackPress }: JoinGameScreenProps) {
             setError('Proszę wprowadzić ID gry.');
             return;
         }
-        
+
         try {
             setIsLoading(true);
             setError('');
-            
-            const response = await API.joinGame(gameId);
-            console.log(`Dołączono do gry: ${gameId}`, response);
-            
-            
+
+            // Sprawdzamy czy gra istnieje
+            try {
+                await ApiService.getGameState(gameId);
+            } catch (error) {
+                throw new Error("Podana gra nie istnieje lub jest już zakończona.");
+            }
+
+            console.log(`Znaleziono grę: ${gameId}`);
+            onGameJoined(gameId);
         } catch (error) {
-            console.error('Błąd podczas dołączania do gry:', error);
-            setError('Nie udało się dołączyć do gry. Sprawdź ID gry i spróbuj ponownie.');
+            console.error('Błąd podczas szukania gry:', error);
+            setError('Nie znaleziono gry. Sprawdź ID gry i spróbuj ponownie.');
         } finally {
             setIsLoading(false);
         }
@@ -44,19 +49,19 @@ export default function JoinGameScreen({ onBackPress }: JoinGameScreenProps) {
                 onChangeText={setGameId}
                 editable={!isLoading}
             />
-            <TouchableOpacity 
-                style={[styles.button, isLoading && styles.buttonDisabled]} 
+            <TouchableOpacity
+                style={[styles.button, isLoading && styles.buttonDisabled]}
                 onPress={handleJoinGame}
                 disabled={isLoading}
             >
                 {isLoading ? (
                     <ActivityIndicator size="small" color="white" />
                 ) : (
-                    <Text style={styles.buttonText}>Dołącz</Text>
+                    <Text style={styles.buttonText}>Dalej</Text>
                 )}
             </TouchableOpacity>
-            <TouchableOpacity 
-                style={styles.button} 
+            <TouchableOpacity
+                style={styles.button}
                 onPress={onBackPress}
                 disabled={isLoading}
             >
@@ -67,6 +72,7 @@ export default function JoinGameScreen({ onBackPress }: JoinGameScreenProps) {
     );
 }
 
+// Style pozostają bez zmian
 const styles = StyleSheet.create({
     container: {
         flex: 1,
@@ -80,37 +86,34 @@ const styles = StyleSheet.create({
         marginBottom: 20,
     },
     input: {
-        height: 40,
-        width: 150,
-        borderRadius: 25,
-        borderWidth: 2,
-        borderColor: '#c006c0',
-        paddingHorizontal: 15,
-        fontSize: 16,
-        textAlign: 'center',
+        width: '100%',
+        height: 50,
+        borderWidth: 1,
+        borderColor: '#ddd',
+        borderRadius: 5,
         marginBottom: 20,
+        paddingHorizontal: 10,
+        backgroundColor: 'white',
     },
     button: {
-        borderRadius: 10,
         backgroundColor: '#a610a6',
-        marginVertical: 10,
-        height: 40,
-        width: 130,
-        justifyContent: 'center',
+        paddingVertical: 10,
+        paddingHorizontal: 20,
+        borderRadius: 5,
+        marginBottom: 10,
+        width: 200,
         alignItems: 'center',
     },
     buttonDisabled: {
-        backgroundColor: '#c77ac7',
         opacity: 0.7,
     },
     buttonText: {
+        color: 'white',
         fontWeight: 'bold',
-        fontSize: 16,
-        color: 'black',
     },
     errorText: {
-        color: 'darkred',
+        color: 'red',
         marginTop: 10,
         textAlign: 'center',
-    },
+    }
 });
