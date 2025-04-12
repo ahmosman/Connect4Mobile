@@ -20,10 +20,9 @@ export default function GameBoard({
   winningBalls,
   isInteractive
 }: GameBoardProps) {
-  // Kolumna nad którą jest kursor/palec
   const [hoverColumn, setHoverColumn] = useState<number | null>(null);
   
-  // Animacja pulsowania dla wygrywających żetonów
+  // Animacja dla wygrywających żetonów
   const pulseAnim = React.useRef(new Animated.Value(1)).current;
   
   React.useEffect(() => {
@@ -47,57 +46,50 @@ export default function GameBoard({
     }
   }, [winningBalls, pulseAnim]);
 
-  // Generowanie pojedynczej komórki planszy
+  // Renderowanie pojedynczej komórki
   const renderCell = (row: number, col: number) => {
     const isLastPutBall = lastPutBall[0] === row && lastPutBall[1] === col;
     const isWinningBall = winningBalls.some(([r, c]) => r === row && c === col);
     
-    // Określenie koloru żetonu
+    // Kolor żetonu
     let backgroundColor = 'white';
-    if (board[row][col] === 1) {
-      backgroundColor = playerColor;
-    } else if (board[row][col] === 2) {
-      backgroundColor = opponentColor;
-    }
+    if (board[row][col] === 1) backgroundColor = playerColor;
+    else if (board[row][col] === 2) backgroundColor = opponentColor;
     
-    // Style dla komórki
+    // Style
     const cellStyle = {
       ...styles.cell,
-      backgroundColor: backgroundColor,
+      backgroundColor,
       borderColor: isLastPutBall ? '#ffeb3b' : 'gray',
       borderWidth: isLastPutBall ? 3 : 1,
     };
     
-    const animatedStyle = isWinningBall ? {
-      ...cellStyle,
-      transform: [{ scale: pulseAnim }]
-    } : cellStyle;
-    
     return isWinningBall ? (
-      <Animated.View key={`cell-${row}-${col}`} style={animatedStyle} />
+      <Animated.View 
+        key={`cell-${row}-${col}`} 
+        style={{...cellStyle, transform: [{ scale: pulseAnim }]}} 
+      />
     ) : (
       <View key={`cell-${row}-${col}`} style={cellStyle} />
     );
   };
 
-  // Sprawdzenie czy kolumna jest pełna
+  // Czy kolumna jest pełna
   const isColumnFull = (column: number): boolean => {
-    // Sprawdź czy najwyższa komórka w kolumnie jest zajęta
     return board[board.length - 1][column] !== 0;
   };
 
   return (
     <View style={styles.container}>
-      {/* Preview dla żetonu (tylko gdy gra jest interaktywna) */}
+      {/* Podgląd żetonu */}
       {isInteractive && hoverColumn !== null && !isColumnFull(hoverColumn) && (
         <View style={[styles.preview, { left: hoverColumn * 44 + 10 }]}>
           <View style={[styles.previewBall, { backgroundColor: playerColor }]} />
         </View>
       )}
       
-      {/* Plansza gry */}
+      {/* Plansza */}
       <View style={styles.board}>
-        {/* Wyświetlanie planszy od góry do dołu */}
         {board.slice().reverse().map((row, reversedRowIndex) => {
           const actualRowIndex = board.length - 1 - reversedRowIndex;
           return (
@@ -108,7 +100,7 @@ export default function GameBoard({
         })}
       </View>
       
-      {/* Obszary dotykowe do wyboru kolumny */}
+      {/* Obszary dotykowe */}
       {isInteractive && (
         <View style={styles.touchLayer}>
           {Array(board[0].length).fill(0).map((_, colIndex) => (
@@ -136,7 +128,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   board: {
-    backgroundColor: '#2c3e50', // Ciemnoniebieski kolor planszy
+    backgroundColor: '#2c3e50',
     borderRadius: 10,
     padding: 5,
     elevation: 5,
@@ -169,7 +161,7 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   columnFull: {
-    opacity: 0.3, // Wizualne oznaczenie, że kolumna jest pełna
+    opacity: 0.3,
   },
   preview: {
     position: 'absolute',

@@ -24,7 +24,7 @@ export default function JoinGameScreen({ onBackPress, onGameJoined }: JoinGameSc
 
             // Sprawdzamy czy gra istnieje
             try {
-                await ApiService.getGameState(gameId);
+                await ApiService.joinGame(gameId);
             } catch (error) {
                 throw new Error("Podana gra nie istnieje lub jest już zakończona.");
             }

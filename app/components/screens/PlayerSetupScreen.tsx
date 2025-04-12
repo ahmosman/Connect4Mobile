@@ -4,7 +4,6 @@ import ApiService from '../../services/ApiService';
 
 interface PlayerSetupScreenProps {
   gameId: string;
-  isFirstPlayer: boolean; // Czy to pierwszy gracz
   onSetupComplete: (nickname: string, playerColor: string, opponentColor: string) => void;
   onBackPress: () => void;
 }
@@ -19,8 +18,6 @@ const COLORS = {
 };
 
 export default function PlayerSetupScreen({ 
-  gameId, 
-  isFirstPlayer, 
   onSetupComplete, 
   onBackPress 
 }: PlayerSetupScreenProps) {
@@ -88,7 +85,7 @@ export default function PlayerSetupScreen({
     <View style={styles.container}>
       <View style={styles.formContainer}>
         <Text style={styles.setupTitle}>
-          {isFirstPlayer ? 'Konfiguracja nowej gry' : 'Dołączanie do gry ' + gameId}
+          {'Wybierz swój kolor i nick'}
         </Text>
 
         <Text style={styles.heading}>Podaj swój nick</Text>
@@ -138,7 +135,7 @@ export default function PlayerSetupScreen({
               <ActivityIndicator size="small" color="#fff" />
             ) : (
               <Text style={styles.buttonText}>
-                {isFirstPlayer ? 'Utwórz grę' : 'Dołącz do gry'}
+                {'Zatwierdź'}
               </Text>
             )}
           </TouchableOpacity>

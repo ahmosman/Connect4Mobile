@@ -1,5 +1,5 @@
-import { StyleSheet } from 'react-native';
-import { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
+import { StyleSheet, View } from 'react-native';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { useFonts, Rajdhani_500Medium } from '@expo-google-fonts/rajdhani';
@@ -10,16 +10,15 @@ import JoinGameScreen from './components/screens/JoinGameScreen';
 import PlayerSetupScreen from './components/screens/PlayerSetupScreen';
 import GameScreen from './components/screens/GameScreen';
 import ManualScreen from './components/screens/ManualScreen';
-import ApiService from './services/ApiService';
+import ConfirmScreen from './components/screens/ConfirmScreen';
+import ApiService, { GameState } from './services/ApiService';
+import Loader from './components/Loader';
 
 // Zapobiegaj automatycznemu ukryciu ekranu ładowania
 SplashScreen.preventAutoHideAsync();
 
-// Możliwe statusy gry
-type GameStatus = 'NOT_STARTED' | 'WAITING_FOR_PLAYER' | 'PLAYER_MOVE' | 'OPPONENT_MOVE' | 'WIN' | 'LOSE' | 'DRAW';
-
-// Typ ekranu aplikacji
-type AppScreen = 'main' | 'playerSetup' | 'waiting' | 'join' | 'game' | 'manual';
+// Typy ekranów aplikacji (niezależne od playerStatus)
+type AppScreen = 'main' | 'playerSetup' | 'join' | 'manual';
 
 export default function HomeScreen() {
   // Stan aplikacji
@@ -30,9 +29,10 @@ export default function HomeScreen() {
   const [opponentColor, setOpponentColor] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isFirstPlayer, setIsFirstPlayer] = useState(true); // Czy to pierwszy gracz
+  const [gameState, setGameState] = useState<GameState | null>(null);
+  const [isFirstPlayer, setIsFirstPlayer] = useState(true);
 
-  // Załadowanie czcionki Rajdhani z Google Fonts
+  // Załadowanie czcionki
   const [fontsLoaded, fontError] = useFonts({
     Rajdhani_500Medium,
   });
@@ -44,80 +44,87 @@ export default function HomeScreen() {
     }
   }, [fontsLoaded, fontError]);
 
-  // Periodyczne sprawdzanie statusu podczas oczekiwania
+  // Pobieranie stanu gry
+  const fetchGameState = async () => {
+    if (!gameId) return;
+
+    try {
+      const state = await ApiService.getGameState();
+      setGameState(state);
+      console.log('Pobrano stan gry:', state.playerStatus);
+    } catch (error) {
+      console.error('Błąd podczas pobierania stanu gry:', error);
+      setErrorMessage('Błąd połączenia z serwerem.');
+    }
+  };
+
+  // Sprawdzanie statusu gry
   useEffect(() => {
     let intervalId: NodeJS.Timeout | undefined;
 
-    if (currentScreen === 'waiting' && gameId) {
-      intervalId = setInterval(async () => {
-        try {
-          const gameState = await ApiService.getGameState(gameId);
-          // Jeśli status wskazuje, że drugi gracz dołączył
-          if (gameState.playerStatus !== 'WAITING') {
-            setCurrentScreen('game');
-          }
-        } catch (error) {
-          console.error('Błąd podczas sprawdzania statusu gry:', error);
-        }
-      }, 3000); // Sprawdzaj co 3 sekundy
+    if (gameId) {
+      fetchGameState();
+      intervalId = setInterval(fetchGameState, 2000); // Sprawdzaj co 2 sekundy
     }
 
     return () => {
       if (intervalId) clearInterval(intervalId);
     };
-  }, [currentScreen, gameId]);
+  }, [gameId]);
 
-  // Obsługa tworzenia nowej gry przez pierwszego gracza (po setupie)
+  // Obsługa tworzenia nowej gry
   const handlePlayerSetupComplete = async (nickname: string, playerColor: string, opponentColor: string) => {
-    // Zapisz dane gracza
     setPlayerNickname(nickname);
     setPlayerColor(playerColor);
     setOpponentColor(opponentColor);
 
-    if (isFirstPlayer) {
-      // Tworzenie nowej gry
-      try {
-        setIsLoading(true);
-        setErrorMessage('');
+    try {
+      setIsLoading(true);
+      setErrorMessage('');
 
-        // Utwórz nową grę
+      if (isFirstPlayer) {
+        // Utworzenie nowej gry
         const response = await ApiService.startNewGame();
         const newGameId = response.unique_game_id;
-        setGameId(newGameId);
-        console.log('Nowa gra utworzona:', newGameId);
+        setGameId(newGameId);  // TODO: OD tego zależne jest wyświetlanie ekranu, drugiemu graczowi się nie ustawia po ustawieniu gry, trzeba rozwiazaćbv 
 
-        // Skonfiguruj dane gracza
+        // Konfiguracja gracza
         await ApiService.setupPlayer(newGameId, nickname, playerColor, opponentColor);
-        console.log('Konfiguracja gracza zapisana');
-
-        // Przejście do ekranu oczekiwania na drugiego gracza
-        setCurrentScreen('waiting');
-      } catch (error) {
-        console.error('Błąd podczas tworzenia gry:', error);
-        setErrorMessage('Nie udało się utworzyć gry. Spróbuj ponownie.');
-        setCurrentScreen('main');
-      } finally {
-        setIsLoading(false);
-      }
-    } else {
-      // Konfigurowanie drugiego gracza
-      try {
-        setIsLoading(true);
-        setErrorMessage('');
-
-        // Skonfiguruj dane gracza i dołącz do gry
+      } else {
+        // Dołączanie do gry i konfiguracja drugiego gracza
         await ApiService.setupPlayer(gameId, nickname, playerColor, opponentColor);
-        await ApiService.joinGame(gameId);
-        console.log('Dołączono do gry i skonfigurowano gracza');
-
-        // Przejście do ekranu gry
-        setCurrentScreen('game');
-      } catch (error) {
-        console.error('Błąd podczas dołączania do gry:', error);
-        setErrorMessage('Nie udało się dołączyć do gry. Spróbuj ponownie.');
-      } finally {
-        setIsLoading(false);
       }
+
+      // Stan gry będzie aktualizowany przez useEffect
+      setCurrentScreen('main'); // Wrócić do głównego widoku, faktyczny ekran zależy od playerStatus
+    } catch (error) {
+      console.error('Błąd konfiguracji gry:', error);
+      setErrorMessage('Nie udało się skonfigurować gry. Spróbuj ponownie.');
+      setCurrentScreen('main');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Obsługa potwierdzenia gotowości
+  const handleConfirm = async () => {
+    try {
+      // Tutaj można dodać endpoint do potwierdzenia gotowości jeśli potrzebny
+      await fetchGameState();
+    } catch (error) {
+      console.error('Błąd podczas potwierdzania gotowości:', error);
+    }
+  };
+
+  // Obsługa ruchu na planszy
+  const handleMove = async (column: number) => {
+    if (!gameId || !gameState?.isPlayerTurn) return;
+
+    try {
+      await ApiService.makeMove(gameId, column);
+      await fetchGameState();
+    } catch (error) {
+      console.error('Błąd podczas wykonywania ruchu:', error);
     }
   };
 
@@ -134,14 +141,9 @@ export default function HomeScreen() {
 
   // Obsługa ID gry wprowadzonego przez drugiego gracza
   const handleJoinGameIdEntered = (joinGameId: string) => {
-    setGameId(joinGameId);
+    // setGameId(joinGameId);
     setIsFirstPlayer(false);
     setCurrentScreen('playerSetup');
-  };
-
-  // Rozpoczęcie gry (gdy drugi gracz dołączy)
-  const handleGameStart = () => {
-    setCurrentScreen('game');
   };
 
   // Powrót do menu głównego
@@ -152,60 +154,90 @@ export default function HomeScreen() {
     setPlayerNickname('');
     setPlayerColor('');
     setOpponentColor('');
+    setGameState(null);
   };
 
-  // Czekaj na załadowanie czcionek przed renderowaniem
+  // Wybór ekranu na podstawie playerStatus
+  const renderGameScreen = () => {
+    if (!gameState) {
+      return <Loader size={40} />;
+    }
+
+    switch (gameState.playerStatus) {
+      case 'WAITING':
+        return <WaitingScreen gameId={gameId} />;
+      case 'CONFIRMING':
+        return (
+          <ConfirmScreen
+            opponentNickname={gameState.opponentNickname || 'Przeciwnik'}
+            onConfirm={handleConfirm}
+          />
+        );
+      case 'PLAYER_MOVE':
+      case 'OPPONENT_MOVE':
+      case 'WIN':
+      case 'LOSE':
+      case 'DRAW':
+        return (
+          <GameScreen
+            gameState={gameState}
+            onMove={handleMove}
+            onBackPress={handleBackToMenu}
+          />
+        );
+      default:
+        return null;
+    }
+  };
+
+  // Czekaj na załadowanie czcionek
   if (!fontsLoaded && !fontError) {
     return null;
   }
 
+  // Renderowanie aktualnego ekranu
+  const renderCurrentScreen = () => {
+    // Jeśli mamy gameId i gameState, to wyświetlamy ekrany zależne od playerStatus
+    if (gameId && (gameState || isLoading)) {
+      return renderGameScreen();
+    }
+
+    // W przeciwnym razie wyświetlamy ekrany niezależne od playerStatus
+    switch (currentScreen) {
+      case 'playerSetup':
+        return (
+          <PlayerSetupScreen
+            gameId={gameId}
+            onSetupComplete={handlePlayerSetupComplete}
+            onBackPress={handleBackToMenu}
+          />
+        );
+      case 'join':
+        return (
+          <JoinGameScreen
+            onBackPress={handleBackToMenu}
+            onGameJoined={handleJoinGameIdEntered}
+          />
+        );
+      case 'manual':
+        return <ManualScreen onBackPress={handleBackToMenu} />;
+      case 'main':
+      default:
+        return (
+          <MainMenuScreen
+            onNewGamePress={handleNewGamePress}
+            onJoinGamePress={handleJoinGamePress}
+            onManualPress={() => setCurrentScreen('manual')}
+            isLoading={isLoading}
+          />
+        );
+    }
+  };
+
   return (
     <ThemedView style={styles.main} onLayout={onLayoutRootView}>
-      {currentScreen === 'main' && (
-        <MainMenuScreen
-          onNewGamePress={handleNewGamePress}
-          onJoinGamePress={handleJoinGamePress}
-          onManualPress={() => setCurrentScreen('manual')}
-          isLoading={isLoading}
-        />
-      )}
-
-      {currentScreen === 'playerSetup' && (
-        <PlayerSetupScreen
-          gameId={gameId}
-          isFirstPlayer={isFirstPlayer}
-          onSetupComplete={handlePlayerSetupComplete}
-          onBackPress={handleBackToMenu}
-        />
-      )}
-
-      {currentScreen === 'waiting' && (
-        <WaitingScreen
-          gameId={gameId}
-          onBackPress={handleBackToMenu}
-          // Tylko do testów - w produkcji powinno być usunięte
-          // onStartGame={handleGameStart}
-        />
-      )}
-
-      {currentScreen === 'join' && (
-        <JoinGameScreen
-          onBackPress={handleBackToMenu}
-          onGameJoined={handleJoinGameIdEntered}
-        />
-      )}
-
-      {currentScreen === 'game' && (
-        <GameScreen
-          gameId={gameId}
-          onBackPress={handleBackToMenu}
-        />
-      )}
-
-      {currentScreen === 'manual' && (
-        <ManualScreen onBackPress={handleBackToMenu} />
-      )}
-
+      {renderCurrentScreen()}
+      {isLoading && <View style={styles.loadingOverlay}><Loader size={40} /></View>}
       {errorMessage && (
         <ThemedText style={styles.errorMessage}>{errorMessage}</ThemedText>
       )}
@@ -231,4 +263,12 @@ const styles = StyleSheet.create({
     padding: 5,
     borderRadius: 5,
   },
+  loadingOverlay: {
+    position: 'absolute',
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+  }
 });

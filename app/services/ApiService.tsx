@@ -1,14 +1,11 @@
 const API_BASE_URL = 'http://localhost:8083/connect4/php/GameEvents';
 
 export class ApiService {
-  // Dodajemy pole do przechowywania ciasteczka sesji
   private static sessionCookie: string | null = null;
+  private static xdebugCookie: string | null = null;
 
   /**
    * Wysyła żądanie POST do API
-   * @param endpoint Endpoint API
-   * @param body Treść żądania
-   * @returns Promise z odpowiedzią API
    */
   private static async post<T>(endpoint: string, body?: Record<string, any>): Promise<T> {
     try {
@@ -16,7 +13,6 @@ export class ApiService {
       const formData = new FormData();
       if (body) {
         Object.keys(body).forEach(key => {
-          // Obsługa zagnieżdżonych obiektów i tablic
           if (typeof body[key] === 'object' && body[key] !== null) {
             formData.append(key, JSON.stringify(body[key]));
           } else {
@@ -27,20 +23,31 @@ export class ApiService {
 
       console.log(`Wysyłanie do API (${endpoint}):`, body);
 
-      // Dodajemy nagłówek z ciasteczkiem sesji, jeśli istnieje
+      // Dodajemy nagłówki
       const headers: HeadersInit = {};
-      if (this.sessionCookie) {
-        headers['Cookie'] = this.sessionCookie;
+      const cookies: string[] = [];
+      
+      // Dodanie ciasteczka sesji i XDEBUG
+      if (this.sessionCookie) cookies.push(this.sessionCookie);
+      if (this.xdebugCookie) {
+        cookies.push(this.xdebugCookie);
+        // Dodanie XDEBUG jako parametr URL
+        const xdebugValue = this.xdebugCookie.split('=')[1];
+        endpoint = `${endpoint}${endpoint.includes('?') ? '&' : '?'}XDEBUG_SESSION=${xdebugValue}`;
+      }
+      
+      if (cookies.length > 0) {
+        headers['Cookie'] = cookies.join('; ');
       }
 
       const response = await fetch(`${API_BASE_URL}/${endpoint}`, {
         method: 'POST',
         headers,
         body: formData,
-        credentials: 'include' // Ważne: pozwala na przesyłanie i odbieranie ciasteczek
+        credentials: 'include'
       });
 
-      // Zapisujemy ciasteczko sesji z odpowiedzi
+      // Obsługa ciasteczka sesji
       const setCookie = response.headers.get('Set-Cookie');
       if (setCookie) {
         this.sessionCookie = setCookie;
@@ -52,69 +59,45 @@ export class ApiService {
       }
 
       const data = await response.json();
-
       if (!data.success) {
-        console.error(`Błąd API: ${data.errorMessage}`);
         throw new Error(data.errorMessage || 'Nieznany błąd API');
       }
 
-      const content = typeof data.content === 'string' && data.content 
-        ? JSON.parse(data.content) 
+      return typeof data.content === 'string' && data.content
+        ? JSON.parse(data.content)
         : data.content || {};
-
-      return content;
     } catch (error) {
-      console.error(`Błąd podczas komunikacji z API (${endpoint}):`, error);
+      console.error(`Błąd API (${endpoint}):`, error);
       throw error;
     }
   }
 
-  /**
-   * Rozpoczyna nową grę
-   * @returns Promise z odpowiedzią zawierającą unique_game_id
-   */
+  // Metody publiczne
+  public static setXdebugCookie(value: string = 'PHPSTORM') {
+    this.xdebugCookie = `XDEBUG_SESSION=${value}`;
+  }
+
+  public static clearXdebugCookie() {
+    this.xdebugCookie = null;
+  }
+
   public static async startNewGame(): Promise<{ unique_game_id: string }> {
-    // Upewnij się, że zaczynasz z nową sesją
-    this.sessionCookie = null;
+    this.sessionCookie = null; // Reset sesji
     return this.post<{ unique_game_id: string }>('game-start.php');
   }
 
-  /**
-   * Dołącza do istniejącej gry
-   * @param gameId ID gry do dołączenia
-   * @returns Promise z odpowiedzią API
-   */
   public static joinGame(gameId: string): Promise<any> {
-    return this.post('game-join.php', { gameId });
+    return this.post('game-join.php', { unique_game_id: gameId });
   }
 
-  /**
-   * Pobiera aktualny stan gry
-   * @param gameId ID gry
-   * @returns Promise z odpowiedzią zawierającą stan gry
-   */
-  public static getGameState(gameId: string): Promise<GameState> {
-    return this.post<GameState>('game-state.php', { gameId });
+  public static getGameState(): Promise<GameState> {
+    return this.post<GameState>('game-state.php');
   }
 
-  /**
-   * Wykonuje ruch (wstawia żeton do wybranej kolumny)
-   * @param gameId ID gry
-   * @param column Indeks kolumny (0-6)
-   * @returns Promise z odpowiedzią API
-   */
   public static makeMove(gameId: string, column: number): Promise<GameState> {
     return this.post<GameState>('make-move.php', { gameId, column });
   }
 
- /**
- * Konfiguruje ustawienia gracza
- * @param gameId ID gry
- * @param nickname Nick gracza
- * @param playerColor Kolor gracza
- * @param opponentColor Kolor przeciwnika
- * @returns Promise z odpowiedzią API
- */
   public static setupPlayer(
     gameId: string,
     nickname: string,
@@ -139,6 +122,7 @@ export interface GameState {
   height: number;
   isPlayerTurn: boolean;
   playerStatus: PlayerStatus;
+  gameInfo: string;
   playerNickname: string;
   playerWins: number;
   playerColor: string;
@@ -149,4 +133,4 @@ export interface GameState {
   winningBalls: Array<[number, number]>;
 }
 
-export type PlayerStatus = 'PLAYER_MOVE' | 'OPPONENT_MOVE' | 'WIN' | 'LOSE' | 'DRAW' | 'WAITING';
+export type PlayerStatus = 'PLAYER_MOVE' | 'OPPONENT_MOVE' | 'WIN' | 'LOSE' | 'DRAW' | 'WAITING' | 'CONFIRMING' | 'REVENGE';
