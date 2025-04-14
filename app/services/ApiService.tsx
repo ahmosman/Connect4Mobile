@@ -26,7 +26,7 @@ export class ApiService {
       // Dodajemy nagłówki
       const headers: HeadersInit = {};
       const cookies: string[] = [];
-      
+
       // Dodanie ciasteczka sesji i XDEBUG
       if (this.sessionCookie) cookies.push(this.sessionCookie);
       if (this.xdebugCookie) {
@@ -35,7 +35,7 @@ export class ApiService {
         const xdebugValue = this.xdebugCookie.split('=')[1];
         endpoint = `${endpoint}${endpoint.includes('?') ? '&' : '?'}XDEBUG_SESSION=${xdebugValue}`;
       }
-      
+
       if (cookies.length > 0) {
         headers['Cookie'] = cookies.join('; ');
       }
@@ -94,18 +94,20 @@ export class ApiService {
     return this.post<GameState>('game-state.php');
   }
 
-  public static makeMove(gameId: string, column: number): Promise<GameState> {
-    return this.post<GameState>('make-move.php', { gameId, column });
+  public static makeMove(column: number): Promise<GameState> {
+    return this.post<GameState>('game-put-ball.php', { column });
+  }
+
+  public static confirmGame(): Promise<any> {
+    return this.post('game-confirm.php');
   }
 
   public static setupPlayer(
-    gameId: string,
     nickname: string,
     playerColor: string,
     opponentColor: string
   ): Promise<any> {
     return this.post('game-player-setup.php', {
-      gameId,
       nickname,
       player_color: playerColor,
       opponent_color: opponentColor
@@ -131,6 +133,7 @@ export interface GameState {
   opponentColor: string;
   lastPutBall: [number, number] | null;
   winningBalls: Array<[number, number]>;
+  gameId: string;
 }
 
-export type PlayerStatus = 'PLAYER_MOVE' | 'OPPONENT_MOVE' | 'WIN' | 'LOSE' | 'DRAW' | 'WAITING' | 'CONFIRMING' | 'REVENGE';
+export type PlayerStatus = 'NONE' | 'WAITING' | 'CONFIRMING' | 'READY' | 'PLAYER_MOVE' | 'OPPONENT_MOVE' | 'WIN' | 'LOSE' | 'DRAW' | 'REVENGE';

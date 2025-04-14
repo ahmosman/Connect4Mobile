@@ -13,6 +13,7 @@ import ManualScreen from './components/screens/ManualScreen';
 import ConfirmScreen from './components/screens/ConfirmScreen';
 import ApiService, { GameState } from './services/ApiService';
 import Loader from './components/Loader';
+import ReadyScreen from './components/screens/ReadyScreen';
 
 // Zapobiegaj automatycznemu ukryciu ekranu ładowania
 SplashScreen.preventAutoHideAsync();
@@ -23,7 +24,7 @@ type AppScreen = 'main' | 'playerSetup' | 'join' | 'manual';
 export default function HomeScreen() {
   // Stan aplikacji
   const [currentScreen, setCurrentScreen] = useState<AppScreen>('main');
-  const [gameId, setGameId] = useState('');
+  const [inGame, setInGame] = useState(false);
   const [playerNickname, setPlayerNickname] = useState('');
   const [playerColor, setPlayerColor] = useState('');
   const [opponentColor, setOpponentColor] = useState('');
@@ -46,8 +47,6 @@ export default function HomeScreen() {
 
   // Pobieranie stanu gry
   const fetchGameState = async () => {
-    if (!gameId) return;
-
     try {
       const state = await ApiService.getGameState();
       setGameState(state);
@@ -58,19 +57,23 @@ export default function HomeScreen() {
     }
   };
 
+  const isPlayerInGame = () => {
+    return gameState && gameState.playerStatus !== 'NONE';
+  };
+
   // Sprawdzanie statusu gry
   useEffect(() => {
     let intervalId: NodeJS.Timeout | undefined;
 
-    if (gameId) {
+    if (inGame) {
       fetchGameState();
-      intervalId = setInterval(fetchGameState, 2000); // Sprawdzaj co 2 sekundy
+      intervalId = setInterval(fetchGameState, 2000);
     }
 
     return () => {
       if (intervalId) clearInterval(intervalId);
     };
-  }, [gameId]);
+  }, [inGame]); 
 
   // Obsługa tworzenia nowej gry
   const handlePlayerSetupComplete = async (nickname: string, playerColor: string, opponentColor: string) => {
@@ -86,15 +89,18 @@ export default function HomeScreen() {
         // Utworzenie nowej gry
         const response = await ApiService.startNewGame();
         const newGameId = response.unique_game_id;
-        setGameId(newGameId);  // TODO: OD tego zależne jest wyświetlanie ekranu, drugiemu graczowi się nie ustawia po ustawieniu gry, trzeba rozwiazaćbv 
+        console.log('Utworzono nową grę: ', newGameId);
 
         // Konfiguracja gracza
-        await ApiService.setupPlayer(newGameId, nickname, playerColor, opponentColor);
+        await ApiService.setupPlayer(nickname, playerColor, opponentColor);
       } else {
         // Dołączanie do gry i konfiguracja drugiego gracza
-        await ApiService.setupPlayer(gameId, nickname, playerColor, opponentColor);
+        await ApiService.setupPlayer(nickname, playerColor, opponentColor);
       }
 
+      await fetchGameState(); // Pobierz stan gry po konfiguracji
+
+      setInGame(true);
       // Stan gry będzie aktualizowany przez useEffect
       setCurrentScreen('main'); // Wrócić do głównego widoku, faktyczny ekran zależy od playerStatus
     } catch (error) {
@@ -109,7 +115,7 @@ export default function HomeScreen() {
   // Obsługa potwierdzenia gotowości
   const handleConfirm = async () => {
     try {
-      // Tutaj można dodać endpoint do potwierdzenia gotowości jeśli potrzebny
+      await ApiService.confirmGame();
       await fetchGameState();
     } catch (error) {
       console.error('Błąd podczas potwierdzania gotowości:', error);
@@ -118,10 +124,10 @@ export default function HomeScreen() {
 
   // Obsługa ruchu na planszy
   const handleMove = async (column: number) => {
-    if (!gameId || !gameState?.isPlayerTurn) return;
+    if (!gameState?.isPlayerTurn) return;
 
     try {
-      await ApiService.makeMove(gameId, column);
+      await ApiService.makeMove(column);
       await fetchGameState();
     } catch (error) {
       console.error('Błąd podczas wykonywania ruchu:', error);
@@ -150,12 +156,14 @@ export default function HomeScreen() {
   const handleBackToMenu = () => {
     setCurrentScreen('main');
     setErrorMessage('');
-    setGameId('');
+    setInGame(false);
     setPlayerNickname('');
     setPlayerColor('');
     setOpponentColor('');
     setGameState(null);
   };
+
+  // In your index.tsx file, update the renderGameScreen function:
 
   // Wybór ekranu na podstawie playerStatus
   const renderGameScreen = () => {
@@ -163,14 +171,22 @@ export default function HomeScreen() {
       return <Loader size={40} />;
     }
 
+    console.log('Renderowanie ekranu gry:', gameState);
+
     switch (gameState.playerStatus) {
       case 'WAITING':
-        return <WaitingScreen gameId={gameId} />;
+        return <WaitingScreen gameId={gameState.gameId} />;
       case 'CONFIRMING':
         return (
           <ConfirmScreen
-            opponentNickname={gameState.opponentNickname || 'Przeciwnik'}
+            opponentNickname={gameState.opponentNickname || 'Nemesis'}
             onConfirm={handleConfirm}
+          />
+        );
+      case 'READY':
+        return (
+          <ReadyScreen
+            opponentNickname={gameState.opponentNickname || 'Nemesis'}
           />
         );
       case 'PLAYER_MOVE':
@@ -197,17 +213,15 @@ export default function HomeScreen() {
 
   // Renderowanie aktualnego ekranu
   const renderCurrentScreen = () => {
-    // Jeśli mamy gameId i gameState, to wyświetlamy ekrany zależne od playerStatus
-    if (gameId && (gameState || isLoading)) {
+
+    if (isPlayerInGame() || isLoading) {
       return renderGameScreen();
     }
 
-    // W przeciwnym razie wyświetlamy ekrany niezależne od playerStatus
     switch (currentScreen) {
       case 'playerSetup':
         return (
           <PlayerSetupScreen
-            gameId={gameId}
             onSetupComplete={handlePlayerSetupComplete}
             onBackPress={handleBackToMenu}
           />

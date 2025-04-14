@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
 import { StyleSheet, Text, View, TextInput, TouchableOpacity, ActivityIndicator } from 'react-native';
-import ApiService from '../../services/ApiService';
 
 interface PlayerSetupScreenProps {
-  gameId: string;
   onSetupComplete: (nickname: string, playerColor: string, opponentColor: string) => void;
   onBackPress: () => void;
 }

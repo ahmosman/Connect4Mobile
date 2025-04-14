@@ -13,24 +13,6 @@ interface GameScreenProps {
 export default function GameScreen({ gameState, onMove, onBackPress }: GameScreenProps) {
   const isInteractive = gameState.playerStatus === 'PLAYER_MOVE';
 
-  // Status gry
-  const getGameStatusText = () => {
-    switch (gameState.playerStatus) {
-      case 'PLAYER_MOVE':
-        return 'Twój ruch';
-      case 'OPPONENT_MOVE':
-        return `${gameState.opponentNickname || 'Przeciwnik'} wykonuje ruch...`;
-      case 'WIN':
-        return 'Wygrałeś!';
-      case 'LOSE':
-        return 'Przegrałeś!';
-      case 'DRAW':
-        return 'Remis!';
-      default:
-        return '';
-    }
-  };
-
   return (
     <View style={styles.container}>
       <GameHeader
@@ -42,7 +24,7 @@ export default function GameScreen({ gameState, onMove, onBackPress }: GameScree
         opponentColor={gameState.opponentColor}
       />
 
-      <Text style={styles.statusText}>{getGameStatusText()}</Text>
+      <Text style={styles.statusText}>{gameState.gameInfo}</Text>
 
       <GameBoard
         board={gameState.board}
