@@ -1,10 +1,10 @@
 import React, { useEffect } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
-import { GameState } from '../../services/ApiService';
+import { GameState } from '../../services/GameService';
 import GameBoard from '../game/GameBoard';
 import GameHeader from '../game/GameHeader';
 import Toast from 'react-native-toast-message';
-import ApiService from '../../services/ApiService';
+import GameService from '../../services/GameService';
 
 interface GameScreenProps {
   gameState: GameState;
@@ -35,7 +35,7 @@ export default function GameScreen({ gameState, onMove, onBackPress }: GameScree
 
   const handleRevengeRequest = async () => {
     try {
-      await ApiService.requestRevenge();
+      await GameService.requestRevenge();
       Toast.show({
         type: 'success',
         text1: 'Wysłano propozycję rewanżu',
@@ -55,7 +55,7 @@ export default function GameScreen({ gameState, onMove, onBackPress }: GameScree
 
   const handleBackToMenu = async () => {
     try {
-      await ApiService.disconnectFromGame();
+      await GameService.disconnectFromGame();
       onBackPress();
     } catch (error) {
       console.error('Błąd podczas rozłączania:', error);
@@ -113,6 +113,7 @@ export default function GameScreen({ gameState, onMove, onBackPress }: GameScree
   );
 }
 
+// Styles remain unchanged
 const styles = StyleSheet.create({
   container: {
     flex: 1,

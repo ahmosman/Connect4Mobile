@@ -1,9 +1,74 @@
-const API_BASE_URL = 'http://192.168.1.10:8083/connect4/php/GameEvents';
+import { io, Socket } from 'socket.io-client';
 
-export class ApiService {
+const API_BASE_URL = 'http://192.168.1.10:8083/connect4/php/GameEvents';
+const SOCKET_URL = 'http://192.168.1.10:8083'; // Adjust this to your WebSocket server URL
+
+export class GameService {
   private static sessionCookie: string | null = null;
   private static xdebugCookie: string | null = null;
+  private static socket: Socket | null = null;
+  private static gameStateListeners: Array<(gameState: GameState) => void> = [];
 
+  // Initialize WebSocket connection
+  public static initializeSocket() {
+    if (this.socket) {
+      console.log('Socket already initialized');
+      return;
+    }
+
+    console.log('Initializing socket connection...');
+    this.socket = io(SOCKET_URL, {
+      transports: ['websocket'],
+      autoConnect: true,
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
+    });
+
+    this.socket.on('connect', () => {
+      console.log('Socket connected:', this.socket?.id);
+    });
+
+    this.socket.on('disconnect', (reason) => {
+      console.log('Socket disconnected:', reason);
+    });
+
+    this.socket.on('error', (error) => {
+      console.error('Socket error:', error);
+    });
+
+    // Listen for game state updates
+    this.socket.on('gameStateUpdate', (data) => {
+      console.log('Received game state update:', data);
+      const gameState: GameState = typeof data.content === 'string'
+        ? JSON.parse(data.content)
+        : data.content;
+
+      // Notify all listeners
+      this.gameStateListeners.forEach(listener => listener(gameState));
+    });
+  }
+
+  // Subscribe to game state updates
+  public static subscribeToGameState(listener: (gameState: GameState) => void): () => void {
+    this.gameStateListeners.push(listener);
+
+    // Return unsubscribe function
+    return () => {
+      this.gameStateListeners = this.gameStateListeners.filter(l => l !== listener);
+    };
+  }
+
+  // Clean up WebSocket connection
+  public static cleanUp() {
+    if (this.socket) {
+      this.socket.disconnect();
+      this.socket = null;
+    }
+    this.gameStateListeners = [];
+  }
+
+  // HTTP Requests for actions that require immediate server response
   private static async request<T>(
     method: 'GET' | 'POST',
     endpoint: string,
@@ -59,7 +124,7 @@ export class ApiService {
     if (!data.content) {
       throw new Error('API response does not contain content');
     }
-    
+
     return typeof data.content === 'string' ? JSON.parse(data.content) : data.content;
   }
 
@@ -71,6 +136,7 @@ export class ApiService {
     return this.request<T>('GET', endpoint, params);
   }
 
+  // Action methods - now emit events via socket when appropriate
   public static setXdebugCookie(value: string = 'PHPSTORM') {
     this.xdebugCookie = `XDEBUG_SESSION=${value}`;
   }
@@ -79,32 +145,60 @@ export class ApiService {
     this.xdebugCookie = null;
   }
 
-  public static startNewGame(): Promise<{ unique_game_id: string }> {
+  public static async startNewGame(): Promise<{ unique_game_id: string }> {
     this.sessionCookie = null; // Reset session
-    return this.post('game-start.php');
+
+    // Initialize socket if not already done
+    if (!this.socket) {
+      this.initializeSocket();
+    }
+
+    // Make HTTP request to start game, server will emit updates via socket
+    const result = await this.post<{ unique_game_id: string }>('game-start.php');
+
+    // Join socket room for this game
+    this.socket?.emit('joinGame', { gameId: result.unique_game_id });
+
+    return result;
   }
 
-  public static joinGame(gameId: string): Promise<any> {
-    return this.post('game-join.php', { unique_game_id: gameId });
+  public static async joinGame(gameId: string): Promise<any> {
+    // Initialize socket if not already done
+    if (!this.socket) {
+      this.initializeSocket();
+    }
+
+    const result = await this.post('game-join.php', { unique_game_id: gameId });
+
+    // Join socket room for this game
+    this.socket?.emit('joinGame', { gameId });
+
+    return result;
   }
 
   public static getGameState(): Promise<GameState> {
+    // We'll keep this method for initial state loading
     return this.get('game-state.php');
   }
 
   public static makeMove(column: number): Promise<GameState> {
+    // Emit event and make API call
+    this.socket?.emit('makeMove', { column });
     return this.post('game-put-ball.php', { column });
   }
 
   public static confirmGame(): Promise<any> {
+    this.socket?.emit('confirmGame');
     return this.post('game-confirm.php');
   }
 
   public static requestRevenge(): Promise<any> {
+    this.socket?.emit('requestRevenge');
     return this.post('game-revenge.php');
   }
 
   public static disconnectFromGame(): Promise<any> {
+    this.socket?.emit('leaveGame');
     return this.post('game-disconnect.php');
   }
 
@@ -121,7 +215,7 @@ export class ApiService {
   }
 }
 
-export default ApiService;
+export default GameService;
 
 // Interfaces for game data
 export interface GameState {

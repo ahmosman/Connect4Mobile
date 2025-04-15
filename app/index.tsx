@@ -11,49 +11,74 @@ import PlayerSetupScreen from './components/screens/PlayerSetupScreen';
 import GameScreen from './components/screens/GameScreen';
 import ManualScreen from './components/screens/ManualScreen';
 import ConfirmScreen from './components/screens/ConfirmScreen';
-import ApiService, { GameState } from './services/ApiService';
+import GameService, { GameState } from './services/GameService';
 import Loader from './components/Loader';
 import ReadyScreen from './components/screens/ReadyScreen';
 
-// Zapobiegaj automatycznemu ukryciu ekranu ładowania
+// Prevent automatic hiding of splash screen
 SplashScreen.preventAutoHideAsync();
 
-// Typy ekranów aplikacji (niezależne od playerStatus)
+// App screen types (independent of playerStatus)
 type AppScreen = 'main' | 'playerSetup' | 'join' | 'manual';
 
 export default function HomeScreen() {
-  // Stan aplikacji
+  // App state
   const [currentScreen, setCurrentScreen] = useState<AppScreen>('main');
   const [inGame, setInGame] = useState(false);
-  const [playerNickname, setPlayerNickname] = useState('');
-  const [playerColor, setPlayerColor] = useState('');
-  const [opponentColor, setOpponentColor] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [gameState, setGameState] = useState<GameState | null>(null);
   const [isFirstPlayer, setIsFirstPlayer] = useState(true);
 
-  // Załadowanie czcionki
+  // Load font
   const [fontsLoaded, fontError] = useFonts({
     Rajdhani_500Medium,
   });
 
-  // Ukryj ekran ładowania po załadowaniu czcionek
+  // Hide splash screen after fonts load
   const onLayoutRootView = useCallback(async () => {
     if (fontsLoaded || fontError) {
       await SplashScreen.hideAsync();
     }
   }, [fontsLoaded, fontError]);
 
-  // Pobieranie stanu gry
+  // Initialize socket connection and handle game state updates
+  useEffect(() => {
+    // Initialize socket connection when app starts
+    GameService.initializeSocket();
+
+    // Set up subscription to game state updates
+    const unsubscribe = GameService.subscribeToGameState((newState) => {
+      setGameState(newState);
+      console.log('Game state updated:', newState.playerStatus);
+    });
+
+    // Fetch initial game state if in a game
+    if (inGame) {
+      fetchGameState();
+    }
+
+    // Clean up when component unmounts
+    return () => {
+      unsubscribe();
+    };
+  }, [inGame]);
+
+  // Clean up WebSocket connection when app closes
+  useEffect(() => {
+    return () => {
+      GameService.cleanUp();
+    };
+  }, []);
+
   const fetchGameState = async () => {
     try {
-      const state = await ApiService.getGameState();
+      const state = await GameService.getGameState();
       setGameState(state);
-      console.log('Pobrano stan gry:', state.playerStatus);
+      console.log('Initial game state loaded:', state.playerStatus);
     } catch (error) {
-      console.error('Błąd podczas pobierania stanu gry:', error);
-      setErrorMessage('Błąd połączenia z serwerem.');
+      console.error('Error fetching game state:', error);
+      setErrorMessage('Server connection error.');
     }
   };
 
@@ -61,117 +86,107 @@ export default function HomeScreen() {
     return gameState && gameState.playerStatus !== 'NONE';
   };
 
-  // Sprawdzanie statusu gry
-  useEffect(() => {
-    let intervalId: NodeJS.Timeout | undefined;
-
-    if (inGame) {
-      fetchGameState();
-      intervalId = setInterval(fetchGameState, 2000);
-    }
-
-    return () => {
-      if (intervalId) clearInterval(intervalId);
-    };
-  }, [inGame]); 
-
-  // Obsługa tworzenia nowej gry
+  // Handle player setup completion
   const handlePlayerSetupComplete = async (nickname: string, playerColor: string, opponentColor: string) => {
-    setPlayerNickname(nickname);
-    setPlayerColor(playerColor);
-    setOpponentColor(opponentColor);
-
     try {
       setIsLoading(true);
       setErrorMessage('');
 
       if (isFirstPlayer) {
-        // Utworzenie nowej gry
-        const response = await ApiService.startNewGame();
+        // Create new game
+        const response = await GameService.startNewGame();
         const newGameId = response.unique_game_id;
-        console.log('Utworzono nową grę: ', newGameId);
+        console.log('Created new game: ', newGameId);
 
-        // Konfiguracja gracza
-        await ApiService.setupPlayer(nickname, playerColor, opponentColor);
+        // Player setup
+        await GameService.setupPlayer(nickname, playerColor, opponentColor);
       } else {
-        // Dołączanie do gry i konfiguracja drugiego gracza
-        await ApiService.setupPlayer(nickname, playerColor, opponentColor);
+        // Join game and set up second player
+        await GameService.setupPlayer(nickname, playerColor, opponentColor);
       }
 
-      await fetchGameState(); // Pobierz stan gry po konfiguracji
+      await fetchGameState(); // Get initial game state after setup
 
       setInGame(true);
-      // Stan gry będzie aktualizowany przez useEffect
-      setCurrentScreen('main'); // Wrócić do głównego widoku, faktyczny ekran zależy od playerStatus
+      setCurrentScreen('main'); // Return to main view, actual screen depends on playerStatus
     } catch (error) {
-      console.error('Błąd konfiguracji gry:', error);
-      setErrorMessage('Nie udało się skonfigurować gry. Spróbuj ponownie.');
+      console.error('Game setup error:', error);
+      setErrorMessage('Failed to set up game. Please try again.');
       setCurrentScreen('main');
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Obsługa potwierdzenia gotowości
+  // Handle confirmation
   const handleConfirm = async () => {
     try {
-      await ApiService.confirmGame();
-      await fetchGameState();
+      await GameService.confirmGame();
     } catch (error) {
-      console.error('Błąd podczas potwierdzania gotowości:', error);
+      console.error('Error confirming readiness:', error);
     }
   };
 
-  // Obsługa ruchu na planszy
+  // Handle move on board
   const handleMove = async (column: number) => {
     if (!gameState?.isPlayerTurn) return;
 
     try {
-      await ApiService.makeMove(column);
-      await fetchGameState();
+      await GameService.makeMove(column);
     } catch (error) {
-      console.error('Błąd podczas wykonywania ruchu:', error);
+      console.error('Error making move:', error);
     }
   };
 
-  // Obsługa kliknięcia "Nowa Gra" w menu głównym
+  // Handle "New Game" click in main menu
   const handleNewGamePress = () => {
     setIsFirstPlayer(true);
     setCurrentScreen('playerSetup');
   };
 
-  // Obsługa kliknięcia "Dołącz do gry" w menu głównym
+  // Handle "Join Game" click in main menu
   const handleJoinGamePress = () => {
     setCurrentScreen('join');
   };
 
-  // Obsługa ID gry wprowadzonego przez drugiego gracza
-  const handleJoinGameIdEntered = (joinGameId: string) => {
-    // setGameId(joinGameId);
-    setIsFirstPlayer(false);
-    setCurrentScreen('playerSetup');
+  // Handle game ID entered by second player
+  const handleJoinGameIdEntered = async (joinGameId: string) => {
+    try {
+      setIsLoading(true);
+      await GameService.joinGame(joinGameId);
+      setIsFirstPlayer(false);
+      setCurrentScreen('playerSetup');
+    } catch (error) {
+      console.error('Error joining game:', error);
+      setErrorMessage('Failed to join game. Please check the game ID and try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  // Powrót do menu głównego
-  const handleBackToMenu = () => {
-    setCurrentScreen('main');
-    setErrorMessage('');
-    setInGame(false);
-    setPlayerNickname('');
-    setPlayerColor('');
-    setOpponentColor('');
-    setGameState(null);
+  // Return to main menu
+  const handleBackToMenu = async () => {
+    try {
+      if (inGame) {
+        await GameService.disconnectFromGame();
+      }
+    } catch (error) {
+      console.error('Error disconnecting from game:', error);
+    } finally {
+      setCurrentScreen('main');
+      setErrorMessage('');
+      setInGame(false);
+      setGameState(null);
+    }
   };
 
-  // In your index.tsx file, update the renderGameScreen function:
-
-  // Wybór ekranu na podstawie playerStatus
+  // Render game screen based on playerStatus
   const renderGameScreen = () => {
     if (!gameState) {
       return <Loader size={40} />;
     }
 
-    console.log('Renderowanie ekranu gry:', gameState);
+    console.log('Rendering game screen:', gameState);
 
     switch (gameState.playerStatus) {
       case 'WAITING':
@@ -207,14 +222,13 @@ export default function HomeScreen() {
     }
   };
 
-  // Czekaj na załadowanie czcionek
+  // Wait for fonts to load
   if (!fontsLoaded && !fontError) {
     return null;
   }
 
-  // Renderowanie aktualnego ekranu
+  // Render current screen
   const renderCurrentScreen = () => {
-
     if (isPlayerInGame() || isLoading) {
       return renderGameScreen();
     }

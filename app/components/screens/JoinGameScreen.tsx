@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { StyleSheet, TextInput, TouchableOpacity, View, Text, ActivityIndicator } from 'react-native';
-import ApiService from '../../services/ApiService';
+import GameService from '../../services/GameService';
 
 interface JoinGameScreenProps {
     onBackPress: () => void;
@@ -22,9 +22,9 @@ export default function JoinGameScreen({ onBackPress, onGameJoined }: JoinGameSc
             setIsLoading(true);
             setError('');
 
-            // Sprawdzamy czy gra istnieje
+            // Checking if the game exists
             try {
-                await ApiService.joinGame(gameId);
+                await GameService.joinGame(gameId);
             } catch (error) {
                 throw new Error("Podana gra nie istnieje lub jest już zakończona.");
             }
@@ -72,7 +72,6 @@ export default function JoinGameScreen({ onBackPress, onGameJoined }: JoinGameSc
     );
 }
 
-// Style pozostają bez zmian
 const styles = StyleSheet.create({
     container: {
         flex: 1,
