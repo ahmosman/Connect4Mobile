@@ -194,6 +194,7 @@ export default function HomeScreen() {
       case 'WIN':
       case 'LOSE':
       case 'DRAW':
+      case 'REVENGE':
         return (
           <GameScreen
             gameState={gameState}
