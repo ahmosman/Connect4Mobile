@@ -16,34 +16,22 @@ export default function MainMenuScreen({
   isLoading = false,
 }: MainMenuScreenProps) {
   const buttons = [
-    { 
-      label: isLoading && isLoading ? 'Tworzenie...' : 'Nowa gra', 
-      onPress: onNewGamePress,
-      disabled: isLoading
-    },
-    { 
-      label: 'Dołącz do gry', 
-      onPress: onJoinGamePress,
-      disabled: isLoading
-    },
-    { 
-      label: 'O grze', 
-      onPress: onManualPress,
-      disabled: isLoading
-    },
+    { label: isLoading ? 'Tworzenie...' : 'Nowa gra', onPress: onNewGamePress, showLoader: isLoading },
+    { label: 'Dołącz do gry', onPress: onJoinGamePress },
+    { label: 'O grze', onPress: onManualPress },
   ];
 
   return (
     <View style={styles.mainSection}>
       <ThemedText style={styles.heading}>Connect4</ThemedText>
       {buttons.map((button, index) => (
-        <TouchableOpacity 
-          key={index} 
-          style={[styles.btnMain, button.disabled && styles.btnDisabled]} 
+        <TouchableOpacity
+          key={index}
+          style={[styles.btnMain, isLoading && index !== 0 && styles.btnDisabled]}
           onPress={button.onPress}
-          disabled={button.disabled}
+          disabled={isLoading && index !== 0}
         >
-          {isLoading && index === 0 ? (
+          {button.showLoader ? (
             <ActivityIndicator size="small" color="white" />
           ) : (
             <ThemedText style={styles.buttonText}>{button.label}</ThemedText>

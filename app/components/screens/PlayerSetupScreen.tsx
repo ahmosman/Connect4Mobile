@@ -6,85 +6,49 @@ interface PlayerSetupScreenProps {
   onBackPress: () => void;
 }
 
-// Dostępne kolory dla graczy
 const COLORS = {
   blue: '#2196f3',
   orange: '#ff9800',
   cyan: '#00bcd4',
   magenta: '#e91e63',
-  green: '#4caf50'
+  green: '#4caf50',
 };
 
-export default function PlayerSetupScreen({ 
-  onSetupComplete, 
-  onBackPress 
-}: PlayerSetupScreenProps) {
-  // Stan dla formularza
+export default function PlayerSetupScreen({ onSetupComplete, onBackPress }: PlayerSetupScreenProps) {
   const [nickname, setNickname] = useState('');
   const [playerColor, setPlayerColor] = useState(COLORS.blue);
   const [opponentColor, setOpponentColor] = useState(COLORS.orange);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
-  // Obsługa zmiany koloru gracza
-  const handlePlayerColorChange = (color: string) => {
-    if (color === opponentColor) {
-      // Zapobiegaj wybraniu tego samego koloru
-      return;
-    }
-    setPlayerColor(color);
+  const handleColorChange = (color: string, isPlayer: boolean) => {
+    if (isPlayer && color !== opponentColor) setPlayerColor(color);
+    if (!isPlayer && color !== playerColor) setOpponentColor(color);
   };
 
-  // Obsługa zmiany koloru przeciwnika
-  const handleOpponentColorChange = (color: string) => {
-    if (color === playerColor) {
-      // Zapobiegaj wybraniu tego samego koloru
-      return;
-    }
-    setOpponentColor(color);
-  };
-
-  // Wysyłanie formularza
   const handleSubmit = () => {
-    if (!nickname || nickname.trim().length === 0) {
-      setErrorMessage('Proszę podać nick');
-      return;
-    }
-
-    if (nickname.length > 7) {
-      setErrorMessage('Nick może mieć maksymalnie 7 znaków');
-      return;
-    }
-
-    // Przekaż dane do rodzica
+    if (!nickname.trim()) return setErrorMessage('Proszę podać nick');
+    if (nickname.length > 7) return setErrorMessage('Nick może mieć maksymalnie 7 znaków');
     onSetupComplete(nickname, playerColor, opponentColor);
   };
 
-  // Renderowanie pojedynczego koloru
-  const renderColorOption = (color: string, isPlayerColor: boolean) => {
-    const isSelected = isPlayerColor 
-      ? color === playerColor 
-      : color === opponentColor;
-    
-    const handlePress = isPlayerColor
-      ? () => handlePlayerColorChange(color)
-      : () => handleOpponentColorChange(color);
-    
-    return (
+  const renderColorOptions = (isPlayer: boolean) =>
+    Object.values(COLORS).map((color) => (
       <TouchableOpacity
-        key={`${color}-${isPlayerColor ? 'player' : 'opponent'}`}
-        style={[styles.color, { backgroundColor: color }, isSelected && styles.selectedColor]}
-        onPress={handlePress}
+        key={color}
+        style={[
+          styles.color,
+          { backgroundColor: color },
+          (isPlayer ? color === playerColor : color === opponentColor) && styles.selectedColor,
+        ]}
+        onPress={() => handleColorChange(color, isPlayer)}
       />
-    );
-  };
+    ));
 
   return (
     <View style={styles.container}>
       <View style={styles.formContainer}>
-        <Text style={styles.setupTitle}>
-          {'Wybierz swój kolor i nick'}
-        </Text>
+        <Text style={styles.setupTitle}>Wybierz swój kolor i nick</Text>
 
         <Text style={styles.heading}>Podaj swój nick</Text>
         <TextInput
@@ -92,56 +56,26 @@ export default function PlayerSetupScreen({
           value={nickname}
           onChangeText={setNickname}
           placeholder="Max. 7 znaków"
-          placeholderTextColor="#999"
           maxLength={7}
           editable={!isLoading}
         />
 
         <Text style={styles.heading}>Wybierz swój kolor</Text>
-        <View style={styles.colorPickerContainer}>
-          {renderColorOption(COLORS.blue, true)}
-          {renderColorOption(COLORS.orange, true)}
-          {renderColorOption(COLORS.cyan, true)}
-          {renderColorOption(COLORS.magenta, true)}
-          {renderColorOption(COLORS.green, true)}
-        </View>
+        <View style={styles.colorPickerContainer}>{renderColorOptions(true)}</View>
 
         <Text style={styles.heading}>Wybierz kolor przeciwnika</Text>
-        <View style={styles.colorPickerContainer}>
-          {renderColorOption(COLORS.blue, false)}
-          {renderColorOption(COLORS.orange, false)}
-          {renderColorOption(COLORS.cyan, false)}
-          {renderColorOption(COLORS.magenta, false)}
-          {renderColorOption(COLORS.green, false)}
-        </View>
+        <View style={styles.colorPickerContainer}>{renderColorOptions(false)}</View>
 
         <View style={styles.buttonContainer}>
-          <TouchableOpacity 
-            style={styles.button} 
-            onPress={onBackPress}
-            disabled={isLoading}
-          >
+          <TouchableOpacity style={styles.button} onPress={onBackPress} disabled={isLoading}>
             <Text style={styles.buttonText}>Powrót</Text>
           </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={styles.button}
-            onPress={handleSubmit}
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <ActivityIndicator size="small" color="#fff" />
-            ) : (
-              <Text style={styles.buttonText}>
-                {'Zatwierdź'}
-              </Text>
-            )}
+          <TouchableOpacity style={styles.button} onPress={handleSubmit} disabled={isLoading}>
+            {isLoading ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.buttonText}>Zatwierdź</Text>}
           </TouchableOpacity>
         </View>
 
-        {errorMessage ? (
-          <Text style={styles.errorText}>{errorMessage}</Text>
-        ) : null}
+        {errorMessage && <Text style={styles.errorText}>{errorMessage}</Text>}
       </View>
     </View>
   );

@@ -14,58 +14,27 @@ interface GameScreenProps {
 
 export default function GameScreen({ gameState, onMove, onBackPress, onRevengeRequest }: GameScreenProps) {
   const isInteractive = gameState.playerStatus === 'PLAYER_MOVE';
+  const showRevengeButton = ['WIN', 'LOSE', 'DRAW'].includes(gameState.playerStatus) && gameState.opponentStatus !== 'DISCONNECTED';
 
   useEffect(() => {
-    if (gameState.opponentStatus === 'REVENGE') {
-      Toast.show({
-        type: 'info',
-        text1: 'Przeciwnik chce rewanżu!',
-        position: 'top',
-        visibilityTime: 10000,
-      });
-    } else if (gameState.opponentStatus === 'DISCONNECTED') {
-      Toast.show({
-        type: 'error',
-        text1: 'Przeciwnik opuścił grę',
-        position: 'top',
-        visibilityTime: 3000,
-      });
+    const messages: Record<string, { type: string; text1: string; visibilityTime: number }> = {
+      REVENGE: { type: 'info', text1: 'Przeciwnik chce rewanżu!', visibilityTime: 10000 },
+      DISCONNECTED: { type: 'error', text1: 'Przeciwnik opuścił grę', visibilityTime: 3000 },
+    };
+
+    if (gameState.opponentStatus && messages[gameState.opponentStatus]) {
+      Toast.show({ ...messages[gameState.opponentStatus], position: 'top' });
     }
   }, [gameState.opponentStatus]);
 
-  const requestRevenge = async () => {
+  const requestRevenge = () => {
     try {
       onRevengeRequest();
-      Toast.show({
-        type: 'success',
-        text1: 'Wysłano propozycję rewanżu',
-        position: 'top',
-        visibilityTime: 2000,
-      });
-    } catch (error) {
-      console.error('Błąd podczas żądania rewanżu:', error);
-      Toast.show({
-        type: 'error',
-        text1: 'Nie udało się wysłać propozycji rewanżu',
-        position: 'top',
-        visibilityTime: 2000,
-      });
+      Toast.show({ type: 'success', text1: 'Wysłano propozycję rewanżu', position: 'top', visibilityTime: 2000 });
+    } catch {
+      Toast.show({ type: 'error', text1: 'Nie udało się wysłać propozycji rewanżu', position: 'top', visibilityTime: 2000 });
     }
   };
-
-  const handleBackToMenu = async () => {
-    try {
-      onBackPress();
-    } catch (error) {
-      console.error('Błąd podczas rozłączania:', error);
-      onBackPress();
-    }
-  };
-
-  const showRevengeButton = (gameState.playerStatus === 'WIN' ||
-    gameState.playerStatus === 'LOSE' ||
-    gameState.playerStatus === 'DRAW') &&
-    gameState.opponentStatus !== 'DISCONNECTED';
 
   return (
     <View style={styles.container}>
@@ -90,17 +59,14 @@ export default function GameScreen({ gameState, onMove, onBackPress, onRevengeRe
         isInteractive={isInteractive}
       />
 
-      {(gameState.playerStatus === 'WIN' || gameState.playerStatus === 'LOSE' || gameState.playerStatus === 'DRAW') && (
+      {['WIN', 'LOSE', 'DRAW', 'REVENGE'].includes(gameState.playerStatus) && (
         <View style={styles.buttonsContainer}>
-          <TouchableOpacity style={styles.button} onPress={handleBackToMenu}>
+          <TouchableOpacity style={styles.button} onPress={onBackPress}>
             <Text style={styles.buttonText}>Menu główne</Text>
           </TouchableOpacity>
 
           {showRevengeButton && (
-            <TouchableOpacity
-              style={[styles.button, styles.revengeButton]}
-              onPress={requestRevenge}
-            >
+            <TouchableOpacity style={[styles.button, styles.revengeButton]} onPress={requestRevenge}>
               <Text style={styles.buttonText}>Rewanż</Text>
             </TouchableOpacity>
           )}

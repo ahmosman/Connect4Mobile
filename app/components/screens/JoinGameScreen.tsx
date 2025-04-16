@@ -13,25 +13,16 @@ export default function JoinGameScreen({ onBackPress, onGameJoined }: JoinGameSc
     const [isLoading, setIsLoading] = useState(false);
 
     const handleJoinGame = async () => {
-        if (!gameId) {
-            setError('Proszę wprowadzić ID gry.');
-            return;
-        }
+        if (!gameId) return setError('Proszę wprowadzić ID gry.');
+
+        setIsLoading(true);
+        setError('');
 
         try {
-            setIsLoading(true);
-            setError('');
-
-            try {
-                await ApiService.joinGame(gameId);
-            } catch (error) {
-                throw new Error("Podana gra nie istnieje lub jest już zakończona.");
-            }
-
+            await ApiService.joinGame(gameId);
             console.log(`Znaleziono grę: ${gameId}`);
             onGameJoined(gameId);
-        } catch (error) {
-            console.error('Błąd podczas szukania gry:', error);
+        } catch {
             setError('Nie znaleziono gry. Sprawdź ID gry i spróbuj ponownie.');
         } finally {
             setIsLoading(false);
@@ -59,11 +50,7 @@ export default function JoinGameScreen({ onBackPress, onGameJoined }: JoinGameSc
                     <Text style={styles.buttonText}>Dalej</Text>
                 )}
             </TouchableOpacity>
-            <TouchableOpacity
-                style={styles.button}
-                onPress={onBackPress}
-                disabled={isLoading}
-            >
+            <TouchableOpacity style={styles.button} onPress={onBackPress} disabled={isLoading}>
                 <Text style={styles.buttonText}>Powrót</Text>
             </TouchableOpacity>
             {error && <Text style={styles.errorText}>{error}</Text>}
@@ -71,7 +58,6 @@ export default function JoinGameScreen({ onBackPress, onGameJoined }: JoinGameSc
     );
 }
 
-// Style pozostają bez zmian
 const styles = StyleSheet.create({
     container: {
         flex: 1,
@@ -114,5 +100,5 @@ const styles = StyleSheet.create({
         color: 'red',
         marginTop: 10,
         textAlign: 'center',
-    }
+    },
 });
