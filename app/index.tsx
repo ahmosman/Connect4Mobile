@@ -56,6 +56,7 @@ export default function HomeScreen() {
     // Fetch initial game state if in a game
     if (inGame) {
       fetchGameState();
+      console.log('Game state fetched:', gameState);
     }
 
     // Clean up when component unmounts

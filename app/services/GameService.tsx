@@ -1,7 +1,7 @@
 import { io, Socket } from 'socket.io-client';
 
 const API_BASE_URL = 'http://192.168.1.10:8083/connect4/php/GameEvents';
-const SOCKET_URL = 'http://192.168.1.10:8083'; // Adjust this to your WebSocket server URL
+const SOCKET_URL = 'http://192.168.1.10:3000';
 
 export class GameService {
   private static sessionCookie: string | null = null;
@@ -122,7 +122,7 @@ export class GameService {
     if (!data.success) throw new Error(data.errorMessage || 'Unknown API error');
 
     if (!data.content) {
-      throw new Error('API response does not contain content');
+      return {} as T;
     }
 
     return typeof data.content === 'string' ? JSON.parse(data.content) : data.content;
@@ -181,26 +181,40 @@ export class GameService {
     return this.get('game-state.php');
   }
 
+  // W metodach emitujących zdarzenia dodaj gameId
+  
   public static makeMove(column: number): Promise<GameState> {
-    // Emit event and make API call
-    this.socket?.emit('makeMove', { column });
+    // Dodaj gameId do emitowanego zdarzenia
+    this.socket?.emit('makeMove', { gameId: this.getCurrentGameId(), column });
     return this.post('game-put-ball.php', { column });
   }
-
+  
   public static confirmGame(): Promise<any> {
-    this.socket?.emit('confirmGame');
+    this.socket?.emit('confirmGame', { gameId: this.getCurrentGameId() });
     return this.post('game-confirm.php');
   }
-
+  
   public static requestRevenge(): Promise<any> {
-    this.socket?.emit('requestRevenge');
+    this.socket?.emit('requestRevenge', { gameId: this.getCurrentGameId() });
     return this.post('game-revenge.php');
   }
-
+  
   public static disconnectFromGame(): Promise<any> {
-    this.socket?.emit('leaveGame');
+    this.socket?.emit('leaveGame', { gameId: this.getCurrentGameId() });
     return this.post('game-disconnect.php');
   }
+  
+  // Pomocnicza metoda do pobierania ID bieżącej gry
+  private static getCurrentGameId(): string | null {
+    // Pobierz ID z ostatniego stanu gry lub zapisanej wartości
+    if (this.gameStateListeners.length > 0 && this._currentGameId) {
+      return this._currentGameId;
+    }
+    return null;
+  }
+  
+  // Dodaj pole na przechowywanie ID bieżącej gry
+  private static _currentGameId: string | null = null;
 
   public static setupPlayer(
     nickname: string,
