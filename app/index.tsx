@@ -15,6 +15,7 @@ import ApiService, { GameState } from './services/ApiService';
 import Loader from './components/Loader';
 import { io, Socket } from 'socket.io-client';
 import ReadyScreen from './components/screens/ReadyScreen';
+import { SOCKET_URL } from '@env';
 
 // Prevent the splash screen from auto-hiding
 SplashScreen.preventAutoHideAsync();
@@ -47,14 +48,17 @@ export default function HomeScreen() {
     }
   };
 
+
   useEffect(() => {
-    const newSocket = io('http://localhost:3000'); // WebSocket server address
+    const newSocket = io(SOCKET_URL); // WebSocket server address
     setSocket(newSocket);
 
     newSocket.on('connect', () => console.log('Connected to WebSocket:', newSocket.id));
     newSocket.on('gameUpdate', fetchGameState);
 
-    return () => { newSocket.disconnect() };
+    return () => {
+      newSocket.disconnect();
+    };
   }, []);
 
   const handlePlayerSetupComplete = async (nickname: string, playerColor: string, opponentColor: string) => {
@@ -130,7 +134,7 @@ export default function HomeScreen() {
     if (gameState) {
       await ApiService.disconnectFromGame();
       socket?.emit('leaveGame', gameState.gameId);
-      socket?.disconnect();
+      // socket?.disconnect();
     }
 
     setCurrentScreen('main');

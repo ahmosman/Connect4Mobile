@@ -1,5 +1,4 @@
-const API_BASE_URL = 'http://192.168.1.10:8083/connect4/php/GameEvents';
-
+import { API_BASE_URL } from '@env';
 export class ApiService {
   private static sessionCookie: string | null = null;
   private static xdebugCookie: string | null = null;
@@ -12,7 +11,6 @@ export class ApiService {
     const headers: HeadersInit = {};
     const cookies: string[] = [];
 
-    // Add session and XDEBUG cookies
     if (this.sessionCookie) cookies.push(this.sessionCookie);
     if (this.xdebugCookie) {
       cookies.push(this.xdebugCookie);
@@ -25,7 +23,6 @@ export class ApiService {
     let url = `${API_BASE_URL}/${endpoint}`;
     const requestOptions: RequestInit = { method, headers, credentials: 'include' };
 
-    // Handle GET parameters
     if (method === 'GET' && body) {
       const params = new URLSearchParams();
       Object.entries(body).forEach(([key, value]) =>
@@ -34,7 +31,6 @@ export class ApiService {
       url += `${url.includes('?') ? '&' : '?'}${params.toString()}`;
     }
 
-    // Handle POST body
     if (method === 'POST' && body) {
       const formData = new FormData();
       Object.entries(body).forEach(([key, value]) =>
@@ -47,7 +43,6 @@ export class ApiService {
 
     const response = await fetch(url, requestOptions);
 
-    // Handle session cookie
     const setCookie = response.headers.get('Set-Cookie');
     if (setCookie) this.sessionCookie = setCookie;
 
