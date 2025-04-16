@@ -14,46 +14,44 @@ import ConfirmScreen from './components/screens/ConfirmScreen';
 import ApiService, { GameState } from './services/ApiService';
 import Loader from './components/Loader';
 import ReadyScreen from './components/screens/ReadyScreen';
+import { io, Socket } from 'socket.io-client';
 
-// Zapobiegaj automatycznemu ukryciu ekranu ładowania
+// Prevent the splash screen from auto-hiding
 SplashScreen.preventAutoHideAsync();
 
-// Typy ekranów aplikacji (niezależne od playerStatus)
+// Application screen types (independent of playerStatus)
 type AppScreen = 'main' | 'playerSetup' | 'join' | 'manual';
 
 export default function HomeScreen() {
-  // Stan aplikacji
+  // Application state
   const [currentScreen, setCurrentScreen] = useState<AppScreen>('main');
-  const [inGame, setInGame] = useState(false);
-  const [playerNickname, setPlayerNickname] = useState('');
-  const [playerColor, setPlayerColor] = useState('');
-  const [opponentColor, setOpponentColor] = useState('');
+  const [gameId, setGameId] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [gameState, setGameState] = useState<GameState | null>(null);
   const [isFirstPlayer, setIsFirstPlayer] = useState(true);
 
-  // Załadowanie czcionki
+  // Load fonts
   const [fontsLoaded, fontError] = useFonts({
     Rajdhani_500Medium,
   });
 
-  // Ukryj ekran ładowania po załadowaniu czcionek
+  // Hide the splash screen after fonts are loaded
   const onLayoutRootView = useCallback(async () => {
     if (fontsLoaded || fontError) {
       await SplashScreen.hideAsync();
     }
   }, [fontsLoaded, fontError]);
 
-  // Pobieranie stanu gry
+  // Fetch the game state from the backend
   const fetchGameState = async () => {
     try {
       const state = await ApiService.getGameState();
       setGameState(state);
-      console.log('Pobrano stan gry:', state.playerStatus);
+      console.log('Game state fetched:', state);
     } catch (error) {
-      console.error('Błąd podczas pobierania stanu gry:', error);
-      setErrorMessage('Błąd połączenia z serwerem.');
+      console.error('Error fetching game state:', error);
+      setErrorMessage('Connection to the server failed.');
     }
   };
 
@@ -61,117 +59,144 @@ export default function HomeScreen() {
     return gameState && gameState.playerStatus !== 'NONE';
   };
 
-  // Sprawdzanie statusu gry
-  useEffect(() => {
-    let intervalId: NodeJS.Timeout | undefined;
+  const [socket, setSocket] = useState<Socket | null>(null);
 
-    if (inGame) {
-      fetchGameState();
-      intervalId = setInterval(fetchGameState, 2000);
-    }
+  // Establish WebSocket connection
+  useEffect(() => {
+    const newSocket = io('http://localhost:3000'); // WebSocket server address
+    setSocket(newSocket);
+
+    newSocket.on('connect', () => {
+      console.log('Connected to WebSocket:', newSocket.id);
+    });
+
+    // Listen for game updates
+    newSocket.on('gameUpdate', (update) => {
+      console.log('Game update received:', update);
+      fetchGameState(); // Fetch the latest game state
+    });
 
     return () => {
-      if (intervalId) clearInterval(intervalId);
+      newSocket.disconnect();
     };
-  }, [inGame]); 
+  }, []);
 
-  // Obsługa tworzenia nowej gry
+  // Handle player setup completion
   const handlePlayerSetupComplete = async (nickname: string, playerColor: string, opponentColor: string) => {
-    setPlayerNickname(nickname);
-    setPlayerColor(playerColor);
-    setOpponentColor(opponentColor);
-
     try {
       setIsLoading(true);
       setErrorMessage('');
 
       if (isFirstPlayer) {
-        // Utworzenie nowej gry
+        // Create a new game
         const response = await ApiService.startNewGame();
         const newGameId = response.unique_game_id;
-        console.log('Utworzono nową grę: ', newGameId);
+        console.log('New game created:', newGameId);
+        setGameId(newGameId);
+        socket?.emit('joinGame', newGameId); // Join the game via WebSocket
 
-        // Konfiguracja gracza
+        // Configure the player
         await ApiService.setupPlayer(nickname, playerColor, opponentColor);
       } else {
-        // Dołączanie do gry i konfiguracja drugiego gracza
+        // Join an existing game and configure the second player
         await ApiService.setupPlayer(nickname, playerColor, opponentColor);
+        socket?.emit('joinGame', gameId); // Join the game via WebSocket
       }
 
-      await fetchGameState(); // Pobierz stan gry po konfiguracji
-
-      setInGame(true);
-      // Stan gry będzie aktualizowany przez useEffect
-      setCurrentScreen('main'); // Wrócić do głównego widoku, faktyczny ekran zależy od playerStatus
+      // The game state will be updated via useEffect
+      setCurrentScreen('main'); // Return to the main view
     } catch (error) {
-      console.error('Błąd konfiguracji gry:', error);
-      setErrorMessage('Nie udało się skonfigurować gry. Spróbuj ponownie.');
+      console.error('Error during game setup:', error);
+      setErrorMessage('Failed to set up the game. Please try again.');
       setCurrentScreen('main');
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Obsługa potwierdzenia gotowości
+  // Handle game confirmation
   const handleConfirm = async () => {
     try {
-      await ApiService.confirmGame();
-      await fetchGameState();
+      await ApiService.confirmGame(); // Send a request to the backend
+
+      // Emit an event only after the response is fully processed
+      if (gameState?.gameId) {
+        socket?.emit('confirmGame', gameState.gameId);
+      }
     } catch (error) {
-      console.error('Błąd podczas potwierdzania gotowości:', error);
+      console.error('Error during game confirmation:', error);
     }
   };
 
-  // Obsługa ruchu na planszy
+  // Handle revenge request
+  const handleRevengeRequest = async () => {
+    try {
+      await ApiService.requestRevenge(); // Send a request to the backend
+
+      // Emit an event only after the response is fully processed
+      if (gameState?.gameId) {
+        socket?.emit('revengeRequest', gameState.gameId);
+      }
+    } catch (error) {
+      console.error('Error during revenge request:', error);
+    }
+  };
+
+  // Handle player move
   const handleMove = async (column: number) => {
-    if (!gameState?.isPlayerTurn) return;
+    if (!gameState?.isPlayerTurn || !socket) return;
 
     try {
-      await ApiService.makeMove(column);
-      await fetchGameState();
+      await ApiService.makeMove(column); // Make a move on the backend
+      console.log('Move made:', column);
+
+      // Emit an event only after the response is fully processed
+      if (gameState?.gameId) {
+        socket.emit('playerMove', { gameId: gameState.gameId, column });
+      }
     } catch (error) {
-      console.error('Błąd podczas wykonywania ruchu:', error);
+      console.error('Error during move:', error);
     }
   };
 
-  // Obsługa kliknięcia "Nowa Gra" w menu głównym
+  // Handle "New Game" button click in the main menu
   const handleNewGamePress = () => {
     setIsFirstPlayer(true);
     setCurrentScreen('playerSetup');
   };
 
-  // Obsługa kliknięcia "Dołącz do gry" w menu głównym
+  // Handle "Join Game" button click in the main menu
   const handleJoinGamePress = () => {
     setCurrentScreen('join');
   };
 
-  // Obsługa ID gry wprowadzonego przez drugiego gracza
-  const handleJoinGameIdEntered = (joinGameId: string) => {
-    // setGameId(joinGameId);
+  // Handle game ID entered by the second player
+  const handleJoinGameIdEntered = (uniqueGameId: string) => {
+    setGameId(uniqueGameId);
+    console.log('Game ID entered by the second player:', uniqueGameId);
     setIsFirstPlayer(false);
     setCurrentScreen('playerSetup');
   };
 
-  // Powrót do menu głównego
-  const handleBackToMenu = () => {
+  // Return to the main menu
+  const handleBackToMenu = async () => {
+    if (gameState) {
+      await ApiService.disconnectFromGame();
+      socket?.emit('leaveGame', gameState.gameId); // Notify the server about leaving the game
+      socket?.disconnect(); // Close the WebSocket connection
+    }
+
     setCurrentScreen('main');
     setErrorMessage('');
-    setInGame(false);
-    setPlayerNickname('');
-    setPlayerColor('');
-    setOpponentColor('');
     setGameState(null);
+    setGameId(null);
   };
 
-  // In your index.tsx file, update the renderGameScreen function:
-
-  // Wybór ekranu na podstawie playerStatus
+  // Select the screen based on playerStatus
   const renderGameScreen = () => {
     if (!gameState) {
       return <Loader size={40} />;
     }
-
-    console.log('Renderowanie ekranu gry:', gameState);
 
     switch (gameState.playerStatus) {
       case 'WAITING':
@@ -200,6 +225,7 @@ export default function HomeScreen() {
             gameState={gameState}
             onMove={handleMove}
             onBackPress={handleBackToMenu}
+            onRevengeRequest={handleRevengeRequest}
           />
         );
       default:
@@ -207,14 +233,13 @@ export default function HomeScreen() {
     }
   };
 
-  // Czekaj na załadowanie czcionek
+  // Wait for fonts to load
   if (!fontsLoaded && !fontError) {
     return null;
   }
 
-  // Renderowanie aktualnego ekranu
+  // Render the current screen
   const renderCurrentScreen = () => {
-
     if (isPlayerInGame() || isLoading) {
       return renderGameScreen();
     }

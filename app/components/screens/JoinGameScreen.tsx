@@ -22,7 +22,6 @@ export default function JoinGameScreen({ onBackPress, onGameJoined }: JoinGameSc
             setIsLoading(true);
             setError('');
 
-            // Sprawdzamy czy gra istnieje
             try {
                 await ApiService.joinGame(gameId);
             } catch (error) {

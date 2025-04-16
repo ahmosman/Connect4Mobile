@@ -4,15 +4,15 @@ import { GameState } from '../../services/ApiService';
 import GameBoard from '../game/GameBoard';
 import GameHeader from '../game/GameHeader';
 import Toast from 'react-native-toast-message';
-import ApiService from '../../services/ApiService';
 
 interface GameScreenProps {
   gameState: GameState;
   onMove: (column: number) => void;
   onBackPress: () => void;
+  onRevengeRequest: () => void;
 }
 
-export default function GameScreen({ gameState, onMove, onBackPress }: GameScreenProps) {
+export default function GameScreen({ gameState, onMove, onBackPress, onRevengeRequest }: GameScreenProps) {
   const isInteractive = gameState.playerStatus === 'PLAYER_MOVE';
 
   useEffect(() => {
@@ -33,9 +33,9 @@ export default function GameScreen({ gameState, onMove, onBackPress }: GameScree
     }
   }, [gameState.opponentStatus]);
 
-  const handleRevengeRequest = async () => {
+  const requestRevenge = async () => {
     try {
-      await ApiService.requestRevenge();
+      onRevengeRequest();
       Toast.show({
         type: 'success',
         text1: 'Wysłano propozycję rewanżu',
@@ -55,7 +55,6 @@ export default function GameScreen({ gameState, onMove, onBackPress }: GameScree
 
   const handleBackToMenu = async () => {
     try {
-      await ApiService.disconnectFromGame();
       onBackPress();
     } catch (error) {
       console.error('Błąd podczas rozłączania:', error);
@@ -100,7 +99,7 @@ export default function GameScreen({ gameState, onMove, onBackPress }: GameScree
           {showRevengeButton && (
             <TouchableOpacity
               style={[styles.button, styles.revengeButton]}
-              onPress={handleRevengeRequest}
+              onPress={requestRevenge}
             >
               <Text style={styles.buttonText}>Rewanż</Text>
             </TouchableOpacity>

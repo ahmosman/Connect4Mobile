@@ -51,24 +51,27 @@ export class ApiService {
     const setCookie = response.headers.get('Set-Cookie');
     if (setCookie) this.sessionCookie = setCookie;
 
-    if (!response.ok) throw new Error(`API Error: ${response.status}`);
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`API Error: ${response.status} - ${errorText}`);
+    }
 
     const data = await response.json();
     if (!data.success) throw new Error(data.errorMessage || 'Unknown API error');
 
     if (!data.content) {
-      throw new Error('API response does not contain content');
+      return {} as T;
     }
-    
+
     return typeof data.content === 'string' ? JSON.parse(data.content) : data.content;
   }
 
-  private static post<T>(endpoint: string, body?: Record<string, any>): Promise<T> {
-    return this.request<T>('POST', endpoint, body);
+  private static async post<T>(endpoint: string, body?: Record<string, any>): Promise<T> {
+    return await this.request<T>('POST', endpoint, body);
   }
 
-  private static get<T>(endpoint: string, params?: Record<string, any>): Promise<T> {
-    return this.request<T>('GET', endpoint, params);
+  private static async get<T>(endpoint: string, params?: Record<string, any>): Promise<T> {
+    return await this.request<T>('GET', endpoint, params);
   }
 
   public static setXdebugCookie(value: string = 'PHPSTORM') {
@@ -79,41 +82,41 @@ export class ApiService {
     this.xdebugCookie = null;
   }
 
-  public static startNewGame(): Promise<{ unique_game_id: string }> {
+  public static async startNewGame(): Promise<{ unique_game_id: string }> {
     this.sessionCookie = null; // Reset session
-    return this.post('game-start.php');
+    return await this.post('game-start.php');
   }
 
-  public static joinGame(gameId: string): Promise<any> {
-    return this.post('game-join.php', { unique_game_id: gameId });
+  public static async joinGame(gameId: string): Promise<any> {
+    return await this.post('game-join.php', { unique_game_id: gameId });
   }
 
-  public static getGameState(): Promise<GameState> {
-    return this.get('game-state.php');
+  public static async getGameState(): Promise<GameState> {
+    return await this.get('game-state.php');
   }
 
-  public static makeMove(column: number): Promise<GameState> {
-    return this.post('game-put-ball.php', { column });
+  public static async makeMove(column: number): Promise<GameState> {
+    return await this.post('game-put-ball.php', { column });
   }
 
-  public static confirmGame(): Promise<any> {
-    return this.post('game-confirm.php');
+  public static async confirmGame(): Promise<any> {
+    return await this.post('game-confirm.php');
   }
 
-  public static requestRevenge(): Promise<any> {
-    return this.post('game-revenge.php');
+  public static async requestRevenge(): Promise<any> {
+    return await this.post('game-revenge.php');
   }
 
-  public static disconnectFromGame(): Promise<any> {
-    return this.post('game-disconnect.php');
+  public static async disconnectFromGame(): Promise<any> {
+    return await this.post('game-disconnect.php');
   }
 
-  public static setupPlayer(
+  public static async setupPlayer(
     nickname: string,
     playerColor: string,
     opponentColor: string
   ): Promise<any> {
-    return this.post('game-player-setup.php', {
+    return await this.post('game-player-setup.php', {
       nickname,
       player_color: playerColor,
       opponent_color: opponentColor,
