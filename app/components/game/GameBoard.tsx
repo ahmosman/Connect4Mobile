@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { StyleSheet, View, TouchableWithoutFeedback, Animated, Dimensions } from 'react-native';
+import { StyleSheet, View, Pressable, Animated, Dimensions } from 'react-native';
+import { Easing } from 'react-native-reanimated';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 const BOARD_PADDING = 10;
@@ -7,12 +8,10 @@ const CELL_MARGIN = 2;
 const NUM_COLUMNS = 8;
 const NUM_ROWS = 8;
 
-// Calculate cell size based on screen dimensions
-const CELL_SIZE = (() => {
-  const widthBased = (screenWidth / 1.25 - BOARD_PADDING * 2 - CELL_MARGIN * (NUM_COLUMNS - 1)) / NUM_COLUMNS;
-  const heightBased = (screenHeight * 0.7 - BOARD_PADDING * 2 - CELL_MARGIN * NUM_ROWS) / (NUM_ROWS + 1);
-  return Math.min(widthBased, heightBased);
-})();
+const CELL_SIZE = Math.min(
+  (screenWidth / 1.25 - BOARD_PADDING * 2 - CELL_MARGIN * (NUM_COLUMNS - 1)) / NUM_COLUMNS,
+  (screenHeight * 0.7 - BOARD_PADDING * 2 - CELL_MARGIN * NUM_ROWS) / (NUM_ROWS + 1)
+);
 
 interface GameBoardProps {
   board: number[][];
@@ -33,23 +32,17 @@ export default function GameBoard({
   winningBalls,
   isInteractive,
 }: GameBoardProps) {
-  const [hoverColumn, setHoverColumn] = useState<number | null>(null);
+  const [isDropping, setIsDropping] = useState(false);
+  const [droppingColumn, setDroppingColumn] = useState<number | null>(null);
+  const dropAnim = useRef(new Animated.Value(0)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
     if (winningBalls.length > 0) {
       Animated.loop(
         Animated.sequence([
-          Animated.timing(pulseAnim, {
-            toValue: 1.2,
-            duration: 500,
-            useNativeDriver: true,
-          }),
-          Animated.timing(pulseAnim, {
-            toValue: 1,
-            duration: 500,
-            useNativeDriver: true,
-          }),
+          Animated.timing(pulseAnim, { toValue: 1.2, duration: 500, useNativeDriver: false }),
+          Animated.timing(pulseAnim, { toValue: 1, duration: 500, useNativeDriver: false }),
         ])
       ).start();
     } else {
@@ -57,18 +50,41 @@ export default function GameBoard({
     }
   }, [winningBalls, pulseAnim]);
 
-  // Check if column is full
-  const isColumnFull = (column: number): boolean => board[board.length - 1][column] !== 0;
+  const isColumnFull = (column: number) => board[board.length - 1][column] !== 0;
 
-  // Render a single cell
+  const findLowestEmptyRow = (column: number) =>
+    board.findIndex((row) => row[column] === 0);
+
+  const handleColumnPress = (column: number) => {
+    if (isDropping || isColumnFull(column)) return;
+
+    const targetRow = findLowestEmptyRow(column);
+    if (targetRow !== -1) {
+      setIsDropping(true);
+      setDroppingColumn(column);
+
+      const targetCellY = (board.length - 1 - targetRow) * (CELL_SIZE + CELL_MARGIN) + BOARD_PADDING;
+
+      dropAnim.setValue(0);
+      Animated.timing(dropAnim, {
+        toValue: targetCellY,
+        duration: 400,
+        easing: Easing.in(Easing.exp),
+        useNativeDriver: false,
+      }).start(() => {
+        setIsDropping(false);
+        setDroppingColumn(null);
+        onColumnPress(column);
+      });
+    }
+  };
+
   const renderCell = (row: number, col: number) => {
     const isLastPut = lastPutBall[0] === row && lastPutBall[1] === col;
     const isWinning = winningBalls.some(([r, c]) => r === row && c === col);
 
-    // Determine cell color
-    let backgroundColor = 'white';
-    if (board[row][col] === 1) backgroundColor = playerColor;
-    else if (board[row][col] === 2) backgroundColor = opponentColor;
+    const backgroundColor =
+      board[row][col] === 1 ? playerColor : board[row][col] === 2 ? opponentColor : 'white';
 
     const cellStyle = {
       ...styles.cell,
@@ -78,10 +94,7 @@ export default function GameBoard({
     };
 
     return isWinning ? (
-      <Animated.View
-        key={`cell-${row}-${col}`}
-        style={{ ...cellStyle, transform: [{ scale: pulseAnim }] }}
-      />
+      <Animated.View key={`cell-${row}-${col}`} style={{ ...cellStyle, transform: [{ scale: pulseAnim }] }} />
     ) : (
       <View key={`cell-${row}-${col}`} style={cellStyle} />
     );
@@ -89,45 +102,37 @@ export default function GameBoard({
 
   return (
     <View style={styles.container}>
-      {/* Preview token */}
-      {isInteractive && hoverColumn !== null && !isColumnFull(hoverColumn) && (
-        <View style={[styles.preview, { left: hoverColumn * (CELL_SIZE + CELL_MARGIN) + BOARD_PADDING }]}>
-          <View style={[styles.previewBall, { backgroundColor: playerColor }]} />
-        </View>
+      {isDropping && droppingColumn !== null && (
+        <Animated.View
+          style={[
+            styles.droppingBall,
+            {
+              top: -CELL_SIZE - CELL_MARGIN,
+              backgroundColor: playerColor,
+              left: droppingColumn * (CELL_SIZE + CELL_MARGIN) + BOARD_PADDING + (droppingColumn * 2.1),
+              transform: [{ translateY: dropAnim }],
+            },
+          ]}
+        />
       )}
 
-      {/* Game board */}
       <View style={styles.board}>
-        {board.slice().reverse().map((row, reversedRowIndex) => {
-          const actualRowIndex = board.length - 1 - reversedRowIndex;
-          return (
-            <View key={`row-${actualRowIndex}`} style={styles.row}>
-              {row.map((_, colIndex) => renderCell(actualRowIndex, colIndex))}
-            </View>
-          );
-        })}
+        {board.slice().reverse().map((row, reversedRowIndex) => (
+          <View key={`row-${reversedRowIndex}`} style={styles.row}>
+            {row.map((_, colIndex) => renderCell(board.length - 1 - reversedRowIndex, colIndex))}
+          </View>
+        ))}
       </View>
 
-      {/* Touch areas */}
-      {isInteractive && (
-        <View style={styles.touchLayer}>
-          {Array(board[0].length).fill(null).map((_, colIndex) => (
-            <TouchableWithoutFeedback
-              key={`column-${colIndex}`}
-              onPress={() => !isColumnFull(colIndex) && onColumnPress(colIndex)}
-              onPressIn={() => setHoverColumn(colIndex)}
-              onPressOut={() => setHoverColumn(null)}
-            >
-              <View
-                style={[
-                  styles.columnTouchArea,
-                  isColumnFull(colIndex) && styles.columnFull,
-                ]}
-              />
-            </TouchableWithoutFeedback>
-          ))}
-        </View>
-      )}
+      <View style={styles.touchLayer} pointerEvents={isInteractive && !isDropping ? 'auto' : 'none'}>
+        {Array(NUM_COLUMNS).fill(null).map((_, colIndex) => (
+          <Pressable
+            key={`column-${colIndex}`}
+            style={[styles.columnTouchArea, isColumnFull(colIndex) && styles.columnFull]}
+            onPress={() => handleColumnPress(colIndex)}
+          />
+        ))}
+      </View>
     </View>
   );
 }
@@ -144,10 +149,6 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: BOARD_PADDING,
     elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 3,
   },
   row: {
     flexDirection: 'row',
@@ -175,15 +176,13 @@ const styles = StyleSheet.create({
   columnFull: {
     opacity: 0.3,
   },
-  preview: {
+  droppingBall: {
     position: 'absolute',
-    top: -CELL_SIZE,
-    zIndex: 10,
-  },
-  previewBall: {
-    width: CELL_SIZE * 0.75,
-    height: CELL_SIZE * 0.75,
-    borderRadius: (CELL_SIZE * 0.75) / 2,
-    opacity: 0.8,
+    width: CELL_SIZE,
+    height: CELL_SIZE,
+    borderRadius: CELL_SIZE / 2,
+    zIndex: 5,
+    borderWidth: 1,
+    borderColor: 'gray',
   },
 });
