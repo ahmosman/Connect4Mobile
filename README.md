@@ -16,6 +16,9 @@ This is a mobile application for the classic game Connect4, built using [Expo](h
 
 
 ## Get started
+1. Setup API server: [Connect4 API Server](https://github.com/ahmosman/connect4/tree/api-websocket)
+
+1. In .env file, set SOCKET_URL and API_BASE_URL as in .env.example
 
 1. Install dependencies
 
@@ -23,7 +26,7 @@ This is a mobile application for the classic game Connect4, built using [Expo](h
    npm install
    ```
 
-2. Start the app
+1. Start the app
 
    ```bash
     npx expo start
