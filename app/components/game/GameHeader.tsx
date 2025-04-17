@@ -1,5 +1,8 @@
 import React from 'react';
-import { StyleSheet, View, Text } from 'react-native';
+import { StyleSheet, View, Text, Dimensions } from 'react-native';
+
+const { width: screenWidth } = Dimensions.get('window');
+const isSmallScreen = screenWidth < 360;
 
 interface GameHeaderProps {
   playerNickname: string;
@@ -18,35 +21,53 @@ export default function GameHeader({
   opponentWins,
   opponentColor
 }: GameHeaderProps) {
+  // Simplified sizing
+  const fontSize = isSmallScreen ? 16 : 18;
+  const indicatorSize = isSmallScreen ? 24 : 30;
+
+  // Helper function to create player text elements with proper type annotations
+  const renderPlayerInfo = (
+    nickname: string,
+    color: string,
+    wins: number,
+    alignRight: boolean = false
+  ) => (
+    <View style={styles.playerInfo}>
+      <Text
+        style={[styles.nickname, { color, fontSize }]}
+        numberOfLines={1}
+        ellipsizeMode="tail"
+      >
+        {nickname || (alignRight ? 'Przeciwnik' : 'Gracz')}
+      </Text>
+      <Text style={[styles.wins, { color, fontSize: Math.max(fontSize - 4, 12) }]}>
+        Wygrane: {wins}
+      </Text>
+      <View
+        style={[
+          styles.colorIndicator,
+          {
+            backgroundColor: color,
+            width: indicatorSize,
+            height: indicatorSize,
+            borderRadius: indicatorSize / 2
+          }
+        ]}
+      />
+    </View>
+  );
+
   return (
     <View style={styles.header}>
-      {/* Nazwy graczy */}
-      <View style={styles.row}>
-        <Text style={[styles.nickname, { color: playerColor }]}>
-          {playerNickname || 'Gracz'}
-        </Text>
-        <Text style={styles.vs}>vs</Text>
-        <Text style={[styles.nickname, { color: opponentColor }]}>
-          {opponentNickname || 'Przeciwnik'}
-        </Text>
-      </View>
+      <View style={styles.container}>
+        {renderPlayerInfo(playerNickname, playerColor, playerWins)}
 
-      {/* Wygrane */}
-      <View style={styles.row}>
-        <Text style={[styles.wins, { color: playerColor }]}>
-          Wygrane: {playerWins}
-        </Text>
-        <View style={styles.divider} />
-        <Text style={[styles.wins, { color: opponentColor }]}>
-          Wygrane: {opponentWins}
-        </Text>
-      </View>
+        <View style={styles.vsContainer}>
+          <Text style={[styles.vs, { fontSize: Math.max(fontSize - 4, 12) }]}>vs</Text>
+          <View style={styles.divider} />
+        </View>
 
-      {/* Kolorowe wskaźniki */}
-      <View style={styles.indicatorRow}>
-        <View style={[styles.colorIndicator, { backgroundColor: playerColor }]} />
-        <View style={styles.spacer} />
-        <View style={[styles.colorIndicator, { backgroundColor: opponentColor }]} />
+        {renderPlayerInfo(opponentNickname, opponentColor, opponentWins, true)}
       </View>
     </View>
   );
@@ -55,56 +76,54 @@ export default function GameHeader({
 const styles = StyleSheet.create({
   header: {
     width: '100%',
-    maxWidth: 320,
+    maxWidth: screenWidth * 0.9,
     backgroundColor: 'rgba(255, 255, 255, 0.9)',
     borderRadius: 10,
-    padding: 10,
+    padding: isSmallScreen ? 8 : 10,
     elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
   },
-  row: {
+  container: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+  },
+  playerInfo: {
+    flex: 1,
+    alignItems: 'center',
   },
   nickname: {
-    fontSize: 18,
     fontWeight: 'bold',
     fontFamily: 'Rajdhani_500Medium',
-    flex: 1,
     textAlign: 'center',
+    paddingHorizontal: 4,
+    marginBottom: 5,
+  },
+  vsContainer: {
+    alignItems: 'center',
+    marginHorizontal: 4,
   },
   vs: {
-    fontSize: 14,
-    marginHorizontal: 8,
     fontWeight: 'bold',
     fontFamily: 'Rajdhani_500Medium',
     color: '#444',
+    marginBottom: 5,
   },
   wins: {
-    fontSize: 14,
-    flex: 1,
     textAlign: 'center',
     fontFamily: 'Rajdhani_500Medium',
+    marginBottom: 5,
   },
   divider: {
     width: 1,
-    height: '100%',
+    height: 20,
     backgroundColor: '#ddd',
-    marginHorizontal: 10,
-  },
-  indicatorRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
     marginTop: 5,
   },
   colorIndicator: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    marginHorizontal: 10,
+    marginTop: 5,
   },
-  spacer: {
-    flex: 1,
-  }
 });

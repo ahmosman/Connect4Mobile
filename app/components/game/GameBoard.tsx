@@ -1,14 +1,27 @@
-import React, { useState } from 'react';
-import { StyleSheet, View, TouchableWithoutFeedback, Animated } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { StyleSheet, View, TouchableWithoutFeedback, Animated, Dimensions } from 'react-native';
+
+const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+const BOARD_PADDING = 10;
+const CELL_MARGIN = 2;
+const NUM_COLUMNS = 8;
+const NUM_ROWS = 8;
+
+// Calculate cell size based on screen dimensions
+const CELL_SIZE = (() => {
+  const widthBased = (screenWidth / 1.25 - BOARD_PADDING * 2 - CELL_MARGIN * (NUM_COLUMNS - 1)) / NUM_COLUMNS;
+  const heightBased = (screenHeight * 0.7 - BOARD_PADDING * 2 - CELL_MARGIN * NUM_ROWS) / (NUM_ROWS + 1);
+  return Math.min(widthBased, heightBased);
+})();
 
 interface GameBoardProps {
-  board: number[][]; // 0 - puste, 1 - gracz, 2 - przeciwnik
+  board: number[][];
   onColumnPress: (column: number) => void;
   playerColor: string;
   opponentColor: string;
-  lastPutBall: [number, number]; // ostatnio wstawiony żeton
-  winningBalls: Array<[number, number]>; // zwycięskie żetony
-  isInteractive: boolean; // czy plansza reaguje na dotyk
+  lastPutBall: [number, number];
+  winningBalls: Array<[number, number]>;
+  isInteractive: boolean;
 }
 
 export default function GameBoard({
@@ -18,15 +31,13 @@ export default function GameBoard({
   opponentColor,
   lastPutBall,
   winningBalls,
-  isInteractive
+  isInteractive,
 }: GameBoardProps) {
   const [hoverColumn, setHoverColumn] = useState<number | null>(null);
-  
-  // Animacja dla wygrywających żetonów
-  const pulseAnim = React.useRef(new Animated.Value(1)).current;
-  
-  React.useEffect(() => {
-    if (winningBalls && winningBalls.length > 0) {
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    if (winningBalls.length > 0) {
       Animated.loop(
         Animated.sequence([
           Animated.timing(pulseAnim, {
@@ -46,49 +57,46 @@ export default function GameBoard({
     }
   }, [winningBalls, pulseAnim]);
 
-  // Renderowanie pojedynczej komórki
+  // Check if column is full
+  const isColumnFull = (column: number): boolean => board[board.length - 1][column] !== 0;
+
+  // Render a single cell
   const renderCell = (row: number, col: number) => {
-    const isLastPutBall = lastPutBall[0] === row && lastPutBall[1] === col;
-    const isWinningBall = winningBalls.some(([r, c]) => r === row && c === col);
-    
-    // Kolor żetonu
+    const isLastPut = lastPutBall[0] === row && lastPutBall[1] === col;
+    const isWinning = winningBalls.some(([r, c]) => r === row && c === col);
+
+    // Determine cell color
     let backgroundColor = 'white';
     if (board[row][col] === 1) backgroundColor = playerColor;
     else if (board[row][col] === 2) backgroundColor = opponentColor;
-    
-    // Style
+
     const cellStyle = {
       ...styles.cell,
       backgroundColor,
-      borderColor: isLastPutBall ? '#ffeb3b' : 'gray',
-      borderWidth: isLastPutBall ? 3 : 1,
+      borderColor: isLastPut ? '#ffeb3b' : 'gray',
+      borderWidth: isLastPut ? 3 : 1,
     };
-    
-    return isWinningBall ? (
-      <Animated.View 
-        key={`cell-${row}-${col}`} 
-        style={{...cellStyle, transform: [{ scale: pulseAnim }]}} 
+
+    return isWinning ? (
+      <Animated.View
+        key={`cell-${row}-${col}`}
+        style={{ ...cellStyle, transform: [{ scale: pulseAnim }] }}
       />
     ) : (
       <View key={`cell-${row}-${col}`} style={cellStyle} />
     );
   };
 
-  // Czy kolumna jest pełna
-  const isColumnFull = (column: number): boolean => {
-    return board[board.length - 1][column] !== 0;
-  };
-
   return (
     <View style={styles.container}>
-      {/* Podgląd żetonu */}
+      {/* Preview token */}
       {isInteractive && hoverColumn !== null && !isColumnFull(hoverColumn) && (
-        <View style={[styles.preview, { left: hoverColumn * 44 + 10 }]}>
+        <View style={[styles.preview, { left: hoverColumn * (CELL_SIZE + CELL_MARGIN) + BOARD_PADDING }]}>
           <View style={[styles.previewBall, { backgroundColor: playerColor }]} />
         </View>
       )}
-      
-      {/* Plansza */}
+
+      {/* Game board */}
       <View style={styles.board}>
         {board.slice().reverse().map((row, reversedRowIndex) => {
           const actualRowIndex = board.length - 1 - reversedRowIndex;
@@ -99,21 +107,23 @@ export default function GameBoard({
           );
         })}
       </View>
-      
-      {/* Obszary dotykowe */}
+
+      {/* Touch areas */}
       {isInteractive && (
         <View style={styles.touchLayer}>
-          {Array(board[0].length).fill(0).map((_, colIndex) => (
-            <TouchableWithoutFeedback 
+          {Array(board[0].length).fill(null).map((_, colIndex) => (
+            <TouchableWithoutFeedback
               key={`column-${colIndex}`}
-              onPress={() => !isColumnFull(colIndex) ? onColumnPress(colIndex) : null}
+              onPress={() => !isColumnFull(colIndex) && onColumnPress(colIndex)}
               onPressIn={() => setHoverColumn(colIndex)}
               onPressOut={() => setHoverColumn(null)}
             >
-              <View style={[
-                styles.columnTouchArea, 
-                isColumnFull(colIndex) && styles.columnFull
-              ]} />
+              <View
+                style={[
+                  styles.columnTouchArea,
+                  isColumnFull(colIndex) && styles.columnFull,
+                ]}
+              />
             </TouchableWithoutFeedback>
           ))}
         </View>
@@ -126,11 +136,13 @@ const styles = StyleSheet.create({
   container: {
     position: 'relative',
     alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
   },
   board: {
     backgroundColor: '#2c3e50',
     borderRadius: 10,
-    padding: 5,
+    padding: BOARD_PADDING,
     elevation: 5,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -141,10 +153,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   cell: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    margin: 2,
+    width: CELL_SIZE,
+    height: CELL_SIZE,
+    borderRadius: CELL_SIZE / 2,
+    margin: CELL_MARGIN,
     borderWidth: 1,
     borderColor: 'gray',
   },
@@ -165,13 +177,13 @@ const styles = StyleSheet.create({
   },
   preview: {
     position: 'absolute',
-    top: -40,
+    top: -CELL_SIZE,
     zIndex: 10,
   },
   previewBall: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
+    width: CELL_SIZE * 0.75,
+    height: CELL_SIZE * 0.75,
+    borderRadius: (CELL_SIZE * 0.75) / 2,
     opacity: 0.8,
-  }
+  },
 });

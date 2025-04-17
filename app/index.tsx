@@ -50,7 +50,7 @@ export default function HomeScreen() {
 
 
   useEffect(() => {
-    const newSocket = io(SOCKET_URL); // WebSocket server address
+    const newSocket = io(SOCKET_URL);
     setSocket(newSocket);
 
     newSocket.on('connect', () => console.log('Connected to WebSocket:', newSocket.id));
