@@ -36,7 +36,8 @@ export default function JoinGameScreen({ onBackPress, onGameJoined }: JoinGameSc
                 style={styles.input}
                 placeholder="ID gry"
                 value={gameId}
-                onChangeText={setGameId}
+                onChangeText={(text) => setGameId(text.replace(/[^0-9]/g, ''))}
+                keyboardType="numeric"
                 editable={!isLoading}
             />
             <TouchableOpacity
@@ -68,10 +69,11 @@ const styles = StyleSheet.create({
     heading: {
         fontSize: 24,
         fontWeight: 'bold',
+        fontFamily: 'Rajdhani_500Medium',
         marginBottom: 20,
     },
     input: {
-        width: '100%',
+        width: 200,
         height: 50,
         borderWidth: 1,
         borderColor: '#ddd',
@@ -79,6 +81,8 @@ const styles = StyleSheet.create({
         marginBottom: 20,
         paddingHorizontal: 10,
         backgroundColor: 'white',
+        fontFamily: 'Rajdhani_500Medium',
+        fontSize: 16,
     },
     button: {
         backgroundColor: '#a610a6',
@@ -95,6 +99,8 @@ const styles = StyleSheet.create({
     buttonText: {
         color: 'white',
         fontWeight: 'bold',
+        fontFamily: 'Rajdhani_500Medium',
+        fontSize: 16,
     },
     errorText: {
         color: 'red',

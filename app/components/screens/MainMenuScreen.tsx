@@ -60,20 +60,20 @@ const styles = StyleSheet.create({
   btnMain: {
     borderRadius: 10,
     backgroundColor: '#a610a6',
-    marginVertical: 10,
-    height: 40,
-    width: 130,
-    justifyContent: 'center',
+    width: 150,
     alignItems: 'center',
+    paddingVertical: 10,
+    marginVertical: 10,
+    paddingHorizontal: 20,
+    marginBottom: 10,
   },
   btnDisabled: {
     backgroundColor: '#c77ac7',
     opacity: 0.7,
   },
   buttonText: {
-    fontFamily: 'Rajdhani_500Medium',
     fontWeight: 'bold',
-    fontSize: 16,
-    color: 'black',
+    fontFamily: 'Rajdhani_500Medium',
+    color: 'white',
   },
 });

@@ -26,6 +26,7 @@ const styles = StyleSheet.create({
   heading: {
     fontSize: 22,
     fontWeight: 'bold',
+    fontFamily: 'Rajdhani_500Medium',
     marginBottom: 10,
     textAlign: 'center',
     color: 'black',
@@ -35,5 +36,6 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     textAlign: 'center',
     color: 'black',
+    fontFamily: 'Rajdhani_500Medium',
   }
 });

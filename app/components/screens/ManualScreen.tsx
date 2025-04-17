@@ -43,6 +43,7 @@ const styles = StyleSheet.create({
   heading: {
     fontSize: 24,
     fontWeight: 'bold',
+    fontFamily: 'Rajdhani_500Medium',
     marginBottom: 20,
     textAlign: 'center',
     color: 'black',
@@ -50,6 +51,7 @@ const styles = StyleSheet.create({
   subHeading: {
     fontSize: 20,
     fontWeight: 'bold',
+    fontFamily: 'Rajdhani_500Medium',
     marginTop: 20,
     marginBottom: 10,
     color: 'black',
@@ -69,6 +71,7 @@ const styles = StyleSheet.create({
   backButtonText: {
     color: 'white',
     fontWeight: 'bold',
+    fontFamily: 'Rajdhani_500Medium',
     fontSize: 16,
   },
 });

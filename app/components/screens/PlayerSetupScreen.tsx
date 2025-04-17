@@ -103,6 +103,7 @@ const styles = StyleSheet.create({
   setupTitle: {
     fontSize: 24,
     fontWeight: 'bold',
+    fontFamily: 'Rajdhani_500Medium',
     marginBottom: 20,
     textAlign: 'center',
     color: '#a610a6',
@@ -110,6 +111,7 @@ const styles = StyleSheet.create({
   heading: {
     fontSize: 20,
     fontWeight: 'bold',
+    fontFamily: 'Rajdhani_500Medium',
     marginTop: 15,
     marginBottom: 10,
     textAlign: 'center',
@@ -124,6 +126,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     fontSize: 18,
     backgroundColor: 'white',
+    fontFamily: 'Rajdhani_500Medium',
   },
   colorPickerContainer: {
     flexDirection: 'row',
@@ -160,6 +163,7 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 16,
     fontWeight: 'bold',
+    fontFamily: 'Rajdhani_500Medium',
   },
   errorText: {
     color: 'red',

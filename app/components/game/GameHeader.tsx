@@ -30,7 +30,7 @@ export default function GameHeader({
           {opponentNickname || 'Przeciwnik'}
         </Text>
       </View>
-      
+
       {/* Wygrane */}
       <View style={styles.row}>
         <Text style={[styles.wins, { color: playerColor }]}>
@@ -41,7 +41,7 @@ export default function GameHeader({
           Wygrane: {opponentWins}
         </Text>
       </View>
-      
+
       {/* Kolorowe wskaźniki */}
       <View style={styles.indicatorRow}>
         <View style={[styles.colorIndicator, { backgroundColor: playerColor }]} />
@@ -70,6 +70,7 @@ const styles = StyleSheet.create({
   nickname: {
     fontSize: 18,
     fontWeight: 'bold',
+    fontFamily: 'Rajdhani_500Medium',
     flex: 1,
     textAlign: 'center',
   },
@@ -77,12 +78,14 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginHorizontal: 8,
     fontWeight: 'bold',
+    fontFamily: 'Rajdhani_500Medium',
     color: '#444',
   },
   wins: {
     fontSize: 14,
     flex: 1,
     textAlign: 'center',
+    fontFamily: 'Rajdhani_500Medium',
   },
   divider: {
     width: 1,

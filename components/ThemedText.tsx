@@ -46,11 +46,13 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 32,
     fontWeight: 'bold',
+    fontFamily: 'Rajdhani_500Medium',
     lineHeight: 32,
   },
   subtitle: {
     fontSize: 20,
     fontWeight: 'bold',
+    fontFamily: 'Rajdhani_500Medium',
   },
   link: {
     lineHeight: 30,

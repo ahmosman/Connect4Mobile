@@ -88,6 +88,7 @@ const styles = StyleSheet.create({
   statusText: {
     fontSize: 20,
     fontWeight: 'bold',
+    fontFamily: 'Rajdhani_500Medium',
     marginVertical: 15,
     color: 'black',
   },
@@ -112,5 +113,6 @@ const styles = StyleSheet.create({
   buttonText: {
     color: 'white',
     fontWeight: 'bold',
+    fontFamily: 'Rajdhani_500Medium',
   },
 });
