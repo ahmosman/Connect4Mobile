@@ -1,6 +1,9 @@
-import React from 'react';
-import { StyleSheet, TouchableOpacity, View, ActivityIndicator } from 'react-native';
+import React, { useMemo } from 'react';
+import { StyleSheet, TouchableOpacity, View, ActivityIndicator, Dimensions } from 'react-native';
 import { ThemedText } from '@/components/ThemedText';
+import Svg, { Image } from 'react-native-svg';
+
+const { width, height } = Dimensions.get('window');
 
 interface MainMenuScreenProps {
   onNewGamePress: () => void;
@@ -15,6 +18,13 @@ export default function MainMenuScreen({
   onManualPress,
   isLoading = false,
 }: MainMenuScreenProps) {
+  const logoSize = useMemo(() => {
+    if (width < 360) return 480;    
+    if (width < 768) return 500;       
+    if (width < 1024) return 550;      
+    return 600;
+  }, [width]);
+
   const buttons = [
     { label: isLoading ? 'Tworzenie...' : 'Nowa gra', onPress: onNewGamePress, showLoader: isLoading },
     { label: 'Dołącz do gry', onPress: onJoinGamePress },
@@ -23,6 +33,17 @@ export default function MainMenuScreen({
 
   return (
     <View style={styles.mainSection}>
+      <View style={styles.logoContainer}>
+        <Svg width={logoSize} height={logoSize} style={styles.logoBackground}>
+          <Image 
+            href={require('@/assets/images/logo.svg')} 
+            width="100%" 
+            height="100%" 
+            preserveAspectRatio="xMidYMid meet"
+          />
+        </Svg>
+      </View>
+      
       <ThemedText style={styles.heading}>Connect4</ThemedText>
       {buttons.map((button, index) => (
         <TouchableOpacity
@@ -50,12 +71,23 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 700,
   },
+  logoContainer: {
+    position: 'absolute',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: '100%',
+    height: '100%',
+  },
+  logoBackground: {
+    opacity: 0.3,
+  },
   heading: {
     fontFamily: 'Rajdhani_500Medium',
     fontSize: 38,
     textAlign: 'center',
     marginBottom: 20,
     color: 'black',
+    zIndex: 2,
   },
   btnMain: {
     borderRadius: 10,
@@ -66,6 +98,7 @@ const styles = StyleSheet.create({
     marginVertical: 10,
     paddingHorizontal: 20,
     marginBottom: 10,
+    zIndex: 2,
   },
   btnDisabled: {
     backgroundColor: '#c77ac7',
