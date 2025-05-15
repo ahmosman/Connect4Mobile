@@ -13,17 +13,17 @@ export default function JoinGameScreen({ onBackPress, onGameJoined }: JoinGameSc
     const [isLoading, setIsLoading] = useState(false);
 
     const handleJoinGame = async () => {
-        if (!gameId) return setError('Proszę wprowadzić ID gry.');
+        if (!gameId) return setError('Please enter a game ID.');
 
         setIsLoading(true);
         setError('');
 
         try {
             await ApiService.joinGame(gameId);
-            console.log(`Znaleziono grę: ${gameId}`);
+            console.log(`Found Game: ${gameId}`);
             onGameJoined(gameId);
         } catch {
-            setError('Nie znaleziono gry. Sprawdź ID gry i spróbuj ponownie.');
+            setError('Game not found. Check the game ID and try again.');
         } finally {
             setIsLoading(false);
         }
@@ -31,10 +31,10 @@ export default function JoinGameScreen({ onBackPress, onGameJoined }: JoinGameSc
 
     return (
         <View style={styles.container}>
-            <Text style={styles.heading}>Wprowadź ID gry</Text>
+            <Text style={styles.heading}>Enter Game ID</Text>
             <TextInput
                 style={styles.input}
-                placeholder="ID gry"
+                placeholder="Game not found. Check the game ID and try again."
                 value={gameId}
                 onChangeText={(text) => setGameId(text.replace(/[^0-9]/g, ''))}
                 keyboardType="numeric"
@@ -48,11 +48,11 @@ export default function JoinGameScreen({ onBackPress, onGameJoined }: JoinGameSc
                 {isLoading ? (
                     <ActivityIndicator size="small" color="white" />
                 ) : (
-                    <Text style={styles.buttonText}>Dalej</Text>
+                    <Text style={styles.buttonText}>Next</Text>
                 )}
             </TouchableOpacity>
             <TouchableOpacity style={styles.button} onPress={onBackPress} disabled={isLoading}>
-                <Text style={styles.buttonText}>Powrót</Text>
+                <Text style={styles.buttonText}>Back</Text>
             </TouchableOpacity>
             {error && <Text style={styles.errorText}>{error}</Text>}
         </View>

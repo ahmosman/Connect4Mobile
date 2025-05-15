@@ -9,9 +9,9 @@ interface WaitingScreenProps {
 export default function WaitingScreen({ gameId }: WaitingScreenProps) {
   return (
     <View style={styles.container}>
-      <Text style={styles.heading}>Twoja gra:</Text>
+      <Text style={styles.heading}>Your game:</Text>
       <Text style={styles.gameId}>{gameId}</Text>
-      <Text style={styles.text}>Oczekiwanie na przeciwnika...</Text>
+      <Text style={styles.text}>Waiting for opponent...</Text>
       <Loader size={40} />
     </View>
   );

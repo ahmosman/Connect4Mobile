@@ -8,27 +8,27 @@ interface ManualScreenProps {
 export default function ManualScreen({ onBackPress }: ManualScreenProps) {
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.heading}>Jak grać</Text>
+      <Text style={styles.heading}>How to Play</Text>
 
-      <Text style={styles.subHeading}>Stwórz nową grę</Text>
-      <Text style={styles.listItem}>1. Kliknij przycisk "Nowa gra"</Text>
+      <Text style={styles.subHeading}>Create a New Game</Text>
+      <Text style={styles.listItem}>1. Click the "New Game" button</Text>
       <Text style={styles.listItem}>
-        2. Wpisz swój nick, wybierz kolor twoich piłek oraz kolor piłek przeciwnika
+        2. Enter your nickname, choose your ball color and opponent's ball color
       </Text>
       <Text style={styles.listItem}>
-        3. Podaj wygenerowane ID gry swojemu przeciwnikowi i zaczekaj aż dołączy!
+        3. Share the generated game ID with your opponent and wait for them to join!
       </Text>
 
-      <Text style={styles.subHeading}>Dołącz do istniejącej gry</Text>
-      <Text style={styles.listItem}>1. Kliknij przycisk "Dołącz do gry"</Text>
-      <Text style={styles.listItem}>2. Wprowadź otrzymane ID gry od przeciwnika</Text>
+      <Text style={styles.subHeading}>Join an Existing Game</Text>
+      <Text style={styles.listItem}>1. Click the "Join Game" button</Text>
+      <Text style={styles.listItem}>2. Enter the game ID received from your opponent</Text>
       <Text style={styles.listItem}>
-        3. Wpisz swój nick, wybierz kolor twoich piłek oraz kolor piłek przeciwnika
+        3. Enter your nickname, choose your ball color and opponent's ball color
       </Text>
-      <Text style={styles.listItem}>4. Zatwierdź wprowadzone dane i rozpocznij grę!</Text>
+      <Text style={styles.listItem}>4. Confirm your information and start the game!</Text>
 
       <TouchableOpacity style={styles.backButton} onPress={onBackPress}>
-        <Text style={styles.backButtonText}>Powrót</Text>
+        <Text style={styles.backButtonText}>Back</Text>
       </TouchableOpacity>
     </ScrollView>
   );

@@ -21,11 +21,9 @@ export default function GameHeader({
   opponentWins,
   opponentColor
 }: GameHeaderProps) {
-  // Simplified sizing
   const fontSize = isSmallScreen ? 16 : 18;
   const indicatorSize = isSmallScreen ? 24 : 30;
 
-  // Helper function to create player text elements with proper type annotations
   const renderPlayerInfo = (
     nickname: string,
     color: string,
@@ -38,10 +36,10 @@ export default function GameHeader({
         numberOfLines={1}
         ellipsizeMode="tail"
       >
-        {nickname || (alignRight ? 'Przeciwnik' : 'Gracz')}
+        {nickname || (alignRight ? 'Opponent' : 'Player')}
       </Text>
       <Text style={[styles.wins, { color, fontSize: Math.max(fontSize - 4, 12) }]}>
-        Wygrane: {wins}
+        Wins: {wins}
       </Text>
       <View
         style={[

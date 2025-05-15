@@ -9,8 +9,8 @@ interface ReadyScreenProps {
 export default function ReadyScreen({ opponentNickname }: ReadyScreenProps) {
   return (
     <View style={styles.container}>
-      <Text style={styles.heading}>Oczekiwanie na {opponentNickname}...</Text>
-      <Text style={styles.subText}>Przeciwnik przygotowuje się do gry</Text>
+      <Text style={styles.heading}>Waiting for {opponentNickname}...</Text>
+      <Text style={styles.subText}>Opponent is getting ready</Text>
       <Loader size={40} />
     </View>
   );

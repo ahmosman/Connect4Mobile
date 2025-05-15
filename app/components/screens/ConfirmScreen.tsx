@@ -9,10 +9,10 @@ interface ConfirmScreenProps {
 export default function ConfirmScreen({ opponentNickname, onConfirm }: ConfirmScreenProps) {
   return (
     <View style={styles.container}>
-      <Text style={styles.heading}>{opponentNickname} czeka na Ciebie!</Text>
-      <Text style={styles.heading}>Gotowy?</Text>
+      <Text style={styles.heading}>{opponentNickname} is waiting for you!</Text>
+      <Text style={styles.heading}>Ready?</Text>
       <TouchableOpacity style={styles.button} onPress={onConfirm}>
-        <Text style={styles.buttonText}>Gotowy</Text>
+        <Text style={styles.buttonText}>Ready</Text>
       </TouchableOpacity>
     </View>
   );

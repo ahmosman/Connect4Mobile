@@ -26,9 +26,9 @@ export default function MainMenuScreen({
   }, [width]);
 
   const buttons = [
-    { label: isLoading ? 'Tworzenie...' : 'Nowa gra', onPress: onNewGamePress, showLoader: isLoading },
-    { label: 'Dołącz do gry', onPress: onJoinGamePress },
-    { label: 'O grze', onPress: onManualPress },
+    { label: isLoading ? 'Creating...' : 'New Game', onPress: onNewGamePress, showLoader: isLoading },
+    { label: 'Join Game', onPress: onJoinGamePress },
+    { label: 'About', onPress: onManualPress },
   ];
 
   return (

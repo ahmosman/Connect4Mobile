@@ -27,8 +27,8 @@ export default function PlayerSetupScreen({ onSetupComplete, onBackPress }: Play
   };
 
   const handleSubmit = () => {
-    if (!nickname.trim()) return setErrorMessage('Proszę podać nick');
-    if (nickname.length > 7) return setErrorMessage('Nick może mieć maksymalnie 7 znaków');
+    if (!nickname.trim()) return setErrorMessage('Please enter a nickname');
+    if (nickname.length > 7) return setErrorMessage('Nickname can be max 7 characters');
     onSetupComplete(nickname, playerColor, opponentColor);
   };
 
@@ -48,30 +48,30 @@ export default function PlayerSetupScreen({ onSetupComplete, onBackPress }: Play
   return (
     <View style={styles.container}>
       <View style={styles.formContainer}>
-        <Text style={styles.setupTitle}>Wybierz swój kolor i nick</Text>
+        <Text style={styles.setupTitle}>Choose your nickname and color</Text>
 
-        <Text style={styles.heading}>Podaj swój nick</Text>
+        <Text style={styles.heading}>Enter your nickname</Text>
         <TextInput
           style={styles.input}
           value={nickname}
           onChangeText={setNickname}
-          placeholder="Max. 7 znaków"
+          placeholder="Max. 7 characters"
           maxLength={7}
           editable={!isLoading}
         />
 
-        <Text style={styles.heading}>Wybierz swój kolor</Text>
+        <Text style={styles.heading}>Choose your color</Text>
         <View style={styles.colorPickerContainer}>{renderColorOptions(true)}</View>
 
-        <Text style={styles.heading}>Wybierz kolor przeciwnika</Text>
+        <Text style={styles.heading}>Choose opponent's color</Text>
         <View style={styles.colorPickerContainer}>{renderColorOptions(false)}</View>
 
         <View style={styles.buttonContainer}>
           <TouchableOpacity style={styles.button} onPress={onBackPress} disabled={isLoading}>
-            <Text style={styles.buttonText}>Powrót</Text>
+            <Text style={styles.buttonText}>Back</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.button} onPress={handleSubmit} disabled={isLoading}>
-            {isLoading ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.buttonText}>Zatwierdź</Text>}
+            {isLoading ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.buttonText}>Confirm</Text>}
           </TouchableOpacity>
         </View>
 

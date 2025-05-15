@@ -18,8 +18,8 @@ export default function GameScreen({ gameState, onMove, onBackPress, onRevengeRe
 
   useEffect(() => {
     const messages: Record<string, { type: string; text1: string; visibilityTime: number }> = {
-      REVENGE: { type: 'info', text1: 'Przeciwnik chce rewanżu!', visibilityTime: 10000 },
-      DISCONNECTED: { type: 'error', text1: 'Przeciwnik opuścił grę', visibilityTime: 3000 },
+      REVENGE: { type: 'info', text1: 'Opponent wants a rematch!', visibilityTime: 10000 },
+      DISCONNECTED: { type: 'error', text1: 'Opponent left the game', visibilityTime: 3000 },
     };
 
     if (gameState.opponentStatus && messages[gameState.opponentStatus]) {
@@ -30,9 +30,9 @@ export default function GameScreen({ gameState, onMove, onBackPress, onRevengeRe
   const requestRevenge = () => {
     try {
       onRevengeRequest();
-      Toast.show({ type: 'success', text1: 'Wysłano propozycję rewanżu', position: 'top', visibilityTime: 2000 });
+      Toast.show({ type: 'success', text1: 'Rematch request sent', position: 'top', visibilityTime: 2000 });
     } catch {
-      Toast.show({ type: 'error', text1: 'Nie udało się wysłać propozycji rewanżu', position: 'top', visibilityTime: 2000 });
+      Toast.show({ type: 'error', text1: 'Failed to send rematch request', position: 'top', visibilityTime: 2000 });
     }
   };
 
@@ -62,12 +62,12 @@ export default function GameScreen({ gameState, onMove, onBackPress, onRevengeRe
       {['WIN', 'LOSE', 'DRAW', 'REVENGE'].includes(gameState.playerStatus) && (
         <View style={[styles.buttonsContainer, { maxWidth: gameState.board[0].length * 45 }]}>
           <TouchableOpacity style={styles.button} onPress={onBackPress}>
-            <Text style={styles.buttonText}>Menu główne</Text>
+            <Text style={styles.buttonText}>Main Menu</Text>
           </TouchableOpacity>
 
           {showRevengeButton && (
             <TouchableOpacity style={[styles.button, styles.revengeButton]} onPress={requestRevenge}>
-              <Text style={styles.buttonText}>Rewanż</Text>
+              <Text style={styles.buttonText}>Rematch</Text>
             </TouchableOpacity>
           )}
         </View>
