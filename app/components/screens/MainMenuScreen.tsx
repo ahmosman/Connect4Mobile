@@ -81,6 +81,9 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     color: 'black',
     zIndex: 2,
+    includeFontPadding: false,
+    textAlignVertical: 'center',
+    height: 60,
   },
   btnMain: {
     borderRadius: 10,

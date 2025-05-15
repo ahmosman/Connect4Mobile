@@ -85,15 +85,18 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 2,
+    zIndex: 10,
   },
   container: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    width: '100%',
   },
   playerInfo: {
     flex: 1,
     alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.8)',
   },
   nickname: {
     fontWeight: 'bold',
@@ -124,6 +127,8 @@ const styles = StyleSheet.create({
     marginTop: 5,
   },
   colorIndicator: {
+    borderWidth: 1,
+    borderColor: '#999',
     marginTop: 5,
-  },
+  }
 });

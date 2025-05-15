@@ -60,7 +60,7 @@ export default function GameScreen({ gameState, onMove, onBackPress, onRevengeRe
       />
 
       {['WIN', 'LOSE', 'DRAW', 'REVENGE'].includes(gameState.playerStatus) && (
-        <View style={styles.buttonsContainer}>
+        <View style={[styles.buttonsContainer, { maxWidth: gameState.board[0].length * 45 }]}>
           <TouchableOpacity style={styles.button} onPress={onBackPress}>
             <Text style={styles.buttonText}>Menu główne</Text>
           </TouchableOpacity>

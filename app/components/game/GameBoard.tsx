@@ -102,20 +102,6 @@ export default function GameBoard({
 
   return (
     <View style={styles.container}>
-      {isDropping && droppingColumn !== null && (
-        <Animated.View
-          style={[
-            styles.droppingBall,
-            {
-              top: -CELL_SIZE - CELL_MARGIN,
-              backgroundColor: playerColor,
-              left: droppingColumn * (CELL_SIZE + CELL_MARGIN) + BOARD_PADDING + (droppingColumn * 2.1),
-              transform: [{ translateY: dropAnim }],
-            },
-          ]}
-        />
-      )}
-
       <View style={styles.board}>
         {board.slice().reverse().map((row, reversedRowIndex) => (
           <View key={`row-${reversedRowIndex}`} style={styles.row}>
@@ -133,6 +119,20 @@ export default function GameBoard({
           />
         ))}
       </View>
+
+      {isDropping && droppingColumn !== null && (
+        <Animated.View
+          style={[
+            styles.droppingBall,
+            {
+              top: -CELL_SIZE - CELL_MARGIN,
+              backgroundColor: playerColor,
+              left: droppingColumn * (CELL_SIZE + CELL_MARGIN) + BOARD_PADDING + (droppingColumn * 2.1),
+              transform: [{ translateY: dropAnim }],
+            },
+          ]}
+        />
+      )}
     </View>
   );
 }
@@ -181,7 +181,8 @@ const styles = StyleSheet.create({
     width: CELL_SIZE,
     height: CELL_SIZE,
     borderRadius: CELL_SIZE / 2,
-    zIndex: 5,
+    zIndex: 100,
+    elevation: 10,
     borderWidth: 1,
     borderColor: 'gray',
   },

@@ -89,16 +89,14 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   formContainer: {
-    width: '100%',
+    width: '90%',
     maxWidth: 500,
     backgroundColor: 'white',
     borderRadius: 10,
     padding: 20,
     elevation: 5,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
+    alignSelf: 'center',
   },
   setupTitle: {
     fontSize: 24,
@@ -118,6 +116,7 @@ const styles = StyleSheet.create({
   },
   input: {
     width: '100%',
+    minWidth: 150,
     height: 50,
     borderWidth: 1,
     borderColor: '#ccc',
@@ -126,7 +125,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     fontSize: 18,
     backgroundColor: 'white',
-    fontFamily: 'Rajdhani_500Medium',
+    alignSelf: 'center',
+    textAlign: 'center',
   },
   colorPickerContainer: {
     flexDirection: 'row',
