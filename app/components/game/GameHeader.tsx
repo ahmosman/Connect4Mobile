@@ -1,3 +1,4 @@
+import { useResponsiveSize } from '@/app/hooks/useResponsiveSize';
 import React from 'react';
 import { StyleSheet, View, Text, Dimensions } from 'react-native';
 
@@ -11,6 +12,7 @@ interface GameHeaderProps {
   opponentNickname: string;
   opponentWins: number;
   opponentColor: string;
+  isTablet?: boolean;
 }
 
 export default function GameHeader({
@@ -19,10 +21,12 @@ export default function GameHeader({
   playerColor,
   opponentNickname,
   opponentWins,
-  opponentColor
+  opponentColor,
+  isTablet = false,
 }: GameHeaderProps) {
-  const fontSize = isSmallScreen ? 16 : 18;
-  const indicatorSize = isSmallScreen ? 24 : 30;
+  const { fontSize } = useResponsiveSize();
+  const headerFontSize = isTablet ? 22 : (isSmallScreen ? 16 : 18);
+  const indicatorSize = isTablet ? 40 : (isSmallScreen ? 24 : 30);
 
   const renderPlayerInfo = (
     nickname: string,
@@ -32,13 +36,13 @@ export default function GameHeader({
   ) => (
     <View style={styles.playerInfo}>
       <Text
-        style={[styles.nickname, { color, fontSize }]}
+        style={[styles.nickname, { color, fontSize: fontSize.large }]}
         numberOfLines={1}
         ellipsizeMode="tail"
       >
         {nickname || (alignRight ? 'Opponent' : 'Player')}
       </Text>
-      <Text style={[styles.wins, { color, fontSize: Math.max(fontSize - 4, 12) }]}>
+      <Text style={[styles.wins, { color, fontSize: Math.max(fontSize.large - 4, 12) }]}>
         Wins: {wins}
       </Text>
       <View
@@ -56,12 +60,12 @@ export default function GameHeader({
   );
 
   return (
-    <View style={styles.header}>
+    <View style={[styles.header, { padding: isTablet ? 15 : (isSmallScreen ? 8 : 10) }]}>
       <View style={styles.container}>
         {renderPlayerInfo(playerNickname, playerColor, playerWins)}
 
         <View style={styles.vsContainer}>
-          <Text style={[styles.vs, { fontSize: Math.max(fontSize - 4, 12) }]}>vs</Text>
+          <Text style={[styles.vs, { fontSize: Math.max(fontSize.xlarge - 4, 12) }]}>vs</Text>
           <View style={styles.divider} />
         </View>
 

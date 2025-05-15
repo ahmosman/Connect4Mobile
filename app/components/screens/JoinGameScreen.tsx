@@ -34,7 +34,7 @@ export default function JoinGameScreen({ onBackPress, onGameJoined }: JoinGameSc
             <Text style={styles.heading}>Enter Game ID</Text>
             <TextInput
                 style={styles.input}
-                placeholder="Game not found. Check the game ID and try again."
+                placeholder="Game ID"
                 value={gameId}
                 onChangeText={(text) => setGameId(text.replace(/[^0-9]/g, ''))}
                 keyboardType="numeric"

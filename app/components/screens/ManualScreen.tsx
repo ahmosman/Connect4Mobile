@@ -1,34 +1,54 @@
 import React from 'react';
 import { StyleSheet, ScrollView, Text, TouchableOpacity } from 'react-native';
+import { useResponsiveSize } from '@/app/hooks/useResponsiveSize';
 
 interface ManualScreenProps {
   onBackPress: () => void;
 }
 
 export default function ManualScreen({ onBackPress }: ManualScreenProps) {
-  return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.heading}>How to Play</Text>
+  const { fontSize, buttonSize, spacing, isTablet } = useResponsiveSize();
 
-      <Text style={styles.subHeading}>Create a New Game</Text>
-      <Text style={styles.listItem}>1. Click the "New Game" button</Text>
-      <Text style={styles.listItem}>
+  return (
+    <ScrollView contentContainerStyle={[styles.container, { padding: spacing.large }]}>
+      <Text style={[styles.heading, { fontSize: fontSize.xlarge }]}>How to Play</Text>
+
+      <Text style={[styles.subHeading, { fontSize: fontSize.large, marginTop: spacing.large }]}>Create a New Game</Text>
+      <Text style={[styles.listItem, { fontSize: fontSize.normal }]}>1. Click the "New Game" button</Text>
+      <Text style={[styles.listItem, { fontSize: fontSize.normal }]}>
         2. Enter your nickname, choose your ball color and opponent's ball color
       </Text>
-      <Text style={styles.listItem}>
+      <Text style={[styles.listItem, { fontSize: fontSize.normal }]}>
         3. Share the generated game ID with your opponent and wait for them to join!
       </Text>
 
-      <Text style={styles.subHeading}>Join an Existing Game</Text>
-      <Text style={styles.listItem}>1. Click the "Join Game" button</Text>
-      <Text style={styles.listItem}>2. Enter the game ID received from your opponent</Text>
-      <Text style={styles.listItem}>
+      <Text style={[styles.subHeading, { fontSize: fontSize.large, marginTop: spacing.large }]}>Join an Existing Game</Text>
+      <Text style={[styles.listItem, { fontSize: fontSize.normal }]}>1. Click the "Join Game" button</Text>
+      <Text style={[styles.listItem, { fontSize: fontSize.normal }]}>2. Enter the game ID received from your opponent</Text>
+      <Text style={[styles.listItem, { fontSize: fontSize.normal }]}>
         3. Enter your nickname, choose your ball color and opponent's ball color
       </Text>
-      <Text style={styles.listItem}>4. Confirm your information and start the game!</Text>
+      <Text style={[styles.listItem, { fontSize: fontSize.normal }]}>4. Confirm your information and start the game!</Text>
 
-      <TouchableOpacity style={styles.backButton} onPress={onBackPress}>
-        <Text style={styles.backButtonText}>Back</Text>
+      <TouchableOpacity
+        style={[
+          styles.backButton,
+          {
+            marginTop: spacing.large,
+            padding: spacing.normal,
+            borderRadius: buttonSize.borderRadius,
+            height: buttonSize.height,
+            justifyContent: 'center'
+          }
+        ]}
+        onPress={onBackPress}
+      >
+        <Text style={[
+          styles.backButtonText,
+          { fontSize: fontSize.large }
+        ]}>
+          Back
+        </Text>
       </TouchableOpacity>
     </ScrollView>
   );
@@ -41,7 +61,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'violet',
   },
   heading: {
-    fontSize: 24,
     fontWeight: 'bold',
     fontFamily: 'Rajdhani_500Medium',
     marginBottom: 20,
@@ -49,29 +68,22 @@ const styles = StyleSheet.create({
     color: 'black',
   },
   subHeading: {
-    fontSize: 20,
     fontWeight: 'bold',
     fontFamily: 'Rajdhani_500Medium',
-    marginTop: 20,
     marginBottom: 10,
     color: 'black',
   },
   listItem: {
-    fontSize: 16,
     marginBottom: 5,
     color: 'black',
   },
   backButton: {
-    marginTop: 20,
-    padding: 10,
     backgroundColor: '#a610a6',
-    borderRadius: 10,
     alignItems: 'center',
   },
   backButtonText: {
     color: 'white',
     fontWeight: 'bold',
     fontFamily: 'Rajdhani_500Medium',
-    fontSize: 16,
   },
 });

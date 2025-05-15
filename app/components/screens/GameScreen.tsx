@@ -4,6 +4,7 @@ import { GameState } from '../../services/ApiService';
 import GameBoard from '../game/GameBoard';
 import GameHeader from '../game/GameHeader';
 import Toast from 'react-native-toast-message';
+import { useResponsiveSize } from '@/app/hooks/useResponsiveSize';
 
 interface GameScreenProps {
   gameState: GameState;
@@ -12,7 +13,17 @@ interface GameScreenProps {
   onRevengeRequest: () => void;
 }
 
+const GameInfoTranslations: Record<string, string> = {
+  'Twój ruch': 'Your turn',
+  'Ruch przeciwnika': 'Opponent\'s turn',
+  'WYGRAŁEŚ': 'YOU WON',
+  'PRZEGRAŁEŚ': 'YOU LOST',
+  'Oczekiwanie na potwierdzenie rewanżu': 'Waiting for rematch confirmation',
+  'Przeciwnik rozłączył się': 'Opponent disconnected',
+}
+
 export default function GameScreen({ gameState, onMove, onBackPress, onRevengeRequest }: GameScreenProps) {
+  const { fontSize, buttonSize, spacing, isTablet } = useResponsiveSize();
   const isInteractive = gameState.playerStatus === 'PLAYER_MOVE';
   const showRevengeButton = ['WIN', 'LOSE', 'DRAW'].includes(gameState.playerStatus) && gameState.opponentStatus !== 'DISCONNECTED';
 
@@ -45,9 +56,12 @@ export default function GameScreen({ gameState, onMove, onBackPress, onRevengeRe
         opponentNickname={gameState.opponentNickname}
         opponentWins={gameState.opponentWins}
         opponentColor={gameState.opponentColor}
+        isTablet={isTablet}
       />
 
-      <Text style={styles.statusText}>{gameState.gameInfo}</Text>
+      <Text style={[styles.statusText, { fontSize: fontSize.large }]}>
+        {GameInfoTranslations[gameState.gameInfo] || gameState.gameInfo}
+      </Text>
 
       <GameBoard
         board={gameState.board}
@@ -60,14 +74,30 @@ export default function GameScreen({ gameState, onMove, onBackPress, onRevengeRe
       />
 
       {['WIN', 'LOSE', 'DRAW', 'REVENGE'].includes(gameState.playerStatus) && (
-        <View style={[styles.buttonsContainer, { maxWidth: gameState.board[0].length * 45 }]}>
-          <TouchableOpacity style={styles.button} onPress={onBackPress}>
-            <Text style={styles.buttonText}>Main Menu</Text>
+        <View style={[styles.buttonsContainer, {
+          maxWidth: gameState.board[0].length * (isTablet ? 65 : 45),
+          gap: spacing.normal
+        }]}>
+          <TouchableOpacity
+            style={[styles.button, {
+              height: buttonSize.height,
+              minWidth: buttonSize.minWidth,
+              borderRadius: buttonSize.borderRadius
+            }]}
+            onPress={onBackPress}
+          >
+            <Text style={[styles.buttonText, { fontSize: fontSize.large }]}>Main Menu</Text>
           </TouchableOpacity>
-
           {showRevengeButton && (
-            <TouchableOpacity style={[styles.button, styles.revengeButton]} onPress={requestRevenge}>
-              <Text style={styles.buttonText}>Rematch</Text>
+            <TouchableOpacity style={[
+              styles.button, {
+                height: buttonSize.height,
+                minWidth: buttonSize.minWidth,
+                borderRadius: buttonSize.borderRadius
+              },
+              styles.revengeButton]}
+              onPress={requestRevenge}>
+              <Text style={[styles.buttonText, { fontSize: fontSize.large }]}>Rematch</Text>
             </TouchableOpacity>
           )}
         </View>

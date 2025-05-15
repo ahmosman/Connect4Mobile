@@ -1,3 +1,4 @@
+import { useResponsiveSize } from '@/app/hooks/useResponsiveSize';
 import React, { useState } from 'react';
 import { StyleSheet, Text, View, TextInput, TouchableOpacity, ActivityIndicator } from 'react-native';
 
@@ -15,6 +16,7 @@ const COLORS = {
 };
 
 export default function PlayerSetupScreen({ onSetupComplete, onBackPress }: PlayerSetupScreenProps) {
+  const { fontSize, buttonSize, inputSize, spacing, isTablet } = useResponsiveSize();
   const [nickname, setNickname] = useState('');
   const [playerColor, setPlayerColor] = useState(COLORS.blue);
   const [opponentColor, setOpponentColor] = useState(COLORS.orange);
@@ -47,12 +49,16 @@ export default function PlayerSetupScreen({ onSetupComplete, onBackPress }: Play
 
   return (
     <View style={styles.container}>
-      <View style={styles.formContainer}>
-        <Text style={styles.setupTitle}>Choose your nickname and color</Text>
+      <View style={[styles.formContainer, { padding: spacing.large }]}>
+        <Text style={[styles.setupTitle, { fontSize: fontSize.xlarge }]}>Choose your nickname and color</Text>
 
-        <Text style={styles.heading}>Enter your nickname</Text>
+        <Text style={[styles.heading, { fontSize: fontSize.large }]}>Enter your nickname</Text>
         <TextInput
-          style={styles.input}
+          style={[styles.input, {
+            height: inputSize.height,
+            fontSize: inputSize.fontSize,
+            width: isTablet ? 300 : 220,
+          }]}
           value={nickname}
           onChangeText={setNickname}
           placeholder="Max. 7 characters"
@@ -67,11 +73,25 @@ export default function PlayerSetupScreen({ onSetupComplete, onBackPress }: Play
         <View style={styles.colorPickerContainer}>{renderColorOptions(false)}</View>
 
         <View style={styles.buttonContainer}>
-          <TouchableOpacity style={styles.button} onPress={onBackPress} disabled={isLoading}>
-            <Text style={styles.buttonText}>Back</Text>
+          <TouchableOpacity
+            style={[styles.button, {
+              height: buttonSize.height,
+              minWidth: buttonSize.minWidth,
+              borderRadius: buttonSize.borderRadius
+            }]}
+            onPress={onBackPress}
+            disabled={isLoading}
+          >
+            <Text style={[styles.buttonText, { fontSize: fontSize.large }]}>Back</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.button} onPress={handleSubmit} disabled={isLoading}>
-            {isLoading ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.buttonText}>Confirm</Text>}
+          <TouchableOpacity style={[styles.button, {
+            height: buttonSize.height,
+            minWidth: buttonSize.minWidth,
+            borderRadius: buttonSize.borderRadius
+          }]}
+            onPress={handleSubmit}
+            disabled={isLoading}>
+            {isLoading ? <ActivityIndicator size="small" color="#fff" /> : <Text style={[styles.buttonText, { fontSize: fontSize.large }]}>Confirm</Text>}
           </TouchableOpacity>
         </View>
 
@@ -169,5 +189,11 @@ const styles = StyleSheet.create({
     color: 'red',
     marginTop: 10,
     textAlign: 'center',
+  },
+  inputContainer: {
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
   },
 });

@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { StyleSheet, TouchableOpacity, View, ActivityIndicator, Dimensions } from 'react-native';
 import { ThemedText } from '@/components/ThemedText';
 import Logo from '@/assets/images/logo.svg';
+import { useResponsiveSize } from '@/app/hooks/useResponsiveSize';
 
 const { width, height } = Dimensions.get('window');
 
@@ -18,12 +19,14 @@ export default function MainMenuScreen({
   onManualPress,
   isLoading = false,
 }: MainMenuScreenProps) {
+  const { fontSize, buttonSize, isTablet } = useResponsiveSize();
   const logoSize = useMemo(() => {
+    if (isTablet) return 700;
     if (width < 360) return 480;
     if (width < 768) return 500;
     if (width < 1024) return 550;
     return 600;
-  }, [width]);
+  }, [width, isTablet]);
 
   const buttons = [
     { label: isLoading ? 'Creating...' : 'New Game', onPress: onNewGamePress, showLoader: isLoading },
@@ -37,18 +40,23 @@ export default function MainMenuScreen({
         <Logo width={logoSize} height={logoSize} style={styles.logoBackground} />
       </View>
 
-      <ThemedText style={styles.heading}>Connect4</ThemedText>
+      <ThemedText style={[styles.heading, { fontSize: fontSize.xxlarge }]}>Connect4</ThemedText>
       {buttons.map((button, index) => (
         <TouchableOpacity
           key={index}
-          style={[styles.btnMain, isLoading && index !== 0 && styles.btnDisabled]}
+          style={[styles.btnMain, isLoading && index !== 0 && styles.btnDisabled, {
+            width: buttonSize.minWidth,
+            height: buttonSize.height,
+            paddingHorizontal: buttonSize.paddingHorizontal,
+            borderRadius: buttonSize.borderRadius,
+          }]}
           onPress={button.onPress}
           disabled={isLoading && index !== 0}
         >
           {button.showLoader ? (
-            <ActivityIndicator size="small" color="white" />
+            <ActivityIndicator size={isTablet ? "large" : "small"} color="white" />
           ) : (
-            <ThemedText style={styles.buttonText}>{button.label}</ThemedText>
+            <ThemedText style={[styles.buttonText, { fontSize: fontSize.normal }]}>{button.label}</ThemedText>
           )}
         </TouchableOpacity>
       ))}
@@ -104,5 +112,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontFamily: 'Rajdhani_500Medium',
     color: 'white',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
