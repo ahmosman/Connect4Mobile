@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { StyleSheet, TouchableOpacity, View, ActivityIndicator, Dimensions } from 'react-native';
 import { ThemedText } from '@/components/ThemedText';
-import Svg, { Image } from 'react-native-svg';
+import Logo from '@/assets/images/logo.svg';
 
 const { width, height } = Dimensions.get('window');
 
@@ -19,9 +19,9 @@ export default function MainMenuScreen({
   isLoading = false,
 }: MainMenuScreenProps) {
   const logoSize = useMemo(() => {
-    if (width < 360) return 480;    
-    if (width < 768) return 500;       
-    if (width < 1024) return 550;      
+    if (width < 360) return 480;
+    if (width < 768) return 500;
+    if (width < 1024) return 550;
     return 600;
   }, [width]);
 
@@ -34,16 +34,9 @@ export default function MainMenuScreen({
   return (
     <View style={styles.mainSection}>
       <View style={styles.logoContainer}>
-        <Svg width={logoSize} height={logoSize} style={styles.logoBackground}>
-          <Image 
-            href={require('@/assets/images/logo.svg')} 
-            width="100%" 
-            height="100%" 
-            preserveAspectRatio="xMidYMid meet"
-          />
-        </Svg>
+        <Logo width={logoSize} height={logoSize} style={styles.logoBackground} />
       </View>
-      
+
       <ThemedText style={styles.heading}>Connect4</ThemedText>
       {buttons.map((button, index) => (
         <TouchableOpacity

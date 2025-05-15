@@ -39,6 +39,23 @@ In the output, you'll find options to open the app in a
 - [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
 - [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
 
+## Development build
+To create a development build of the app, you can use the following command:
+
+```bash
+npx expo prebuild
+
+# For android
+npx expo run:android
+
+# or for specific device
+npx expo run:android --device
+
+
+# For ios
+npx expo run:ios
+```
+
 
 ## License
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.

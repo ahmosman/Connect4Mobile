@@ -14,7 +14,8 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.anonymous.Connect4Mobile"
     },
     "entryPoint": "./app.tsx",
     "web": {
