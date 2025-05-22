@@ -12,10 +12,11 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "foregroundImage": "./assets/images/logo.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.anonymous.Connect4Mobile"
+      "package": "dev.ahmosman.Connect4Mobile",
+      "versionCode": 1
     },
     "entryPoint": "./app.tsx",
     "web": {
@@ -33,6 +34,11 @@
         }
       ],
       "expo-font"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "da3c0cfa-2695-4f96-960d-a7f0e6591fdb"
+      }
+    }
   }
 }
