@@ -1,4 +1,6 @@
 # Connect4 Mobile
+![Alt text](https://img.shields.io/badge/release%20date-may%202025-e84de5)
+
 This is a mobile application for the classic game Connect4, built using [Expo](https://expo.dev/) and [React Native](https://reactnative.dev/). The app allows users to play Connect4 against each other.
 
 ---
